@@ -1289,7 +1289,350 @@ fetchData();
     </section>
 </body>
 </html>`,
+                代码世界博客模板: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="暗色技术博客 - 探索代码世界，分享编程知识与技术洞见">
+    <meta name="keywords" content="编程, JavaScript, 技术博客, 异步编程">
+    <meta name="author" content="小刚">
+    <title>暗色技术博客 - 代码世界</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
+        body {
+            font-family: 'Noto Sans SC', 'Roboto', sans-serif;
+            line-height: 1.7;
+            background-color: #121212;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
+            padding: 3rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            color: #00adb5;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #b0b0b0;
+        }
+
+        /* Navigation */
+        .nav {
+            background: #1e1e1e;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .nav a {
+            color: #e0e0e0;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav a:hover {
+            color: #00adb5;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            display: flex;
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+
+        /* Article Section */
+        .article-container {
+            flex: 3;
+            background: #222222;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .article h1 {
+            font-size: 2.2rem;
+            color: #00adb5;
+            margin-bottom: 1rem;
+        }
+
+        .meta {
+            font-size: 0.9rem;
+            color: #999;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .article h2 {
+            font-size: 1.6rem;
+            color: #e0e0e0;
+            border-left: 5px solid #00adb5;
+            padding-left: 0.8rem;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .article p {
+            margin-bottom: 1.2rem;
+            font-size: 1rem;
+        }
+
+        .article code {
+            background: #333;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .article pre {
+            background: #333;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            flex: 1;
+            background: #222222;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar h3 {
+            font-size: 1.4rem;
+            color: #00adb5;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 0.8rem;
+        }
+
+        .sidebar a {
+            color: #e0e0e0;
+            text-decoration: none;
+        }
+
+        .sidebar a:hover {
+            color: #00adb5;
+        }
+
+        /* Buttons */
+        .button {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: #00adb5;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.3s;
+            margin: 1rem 0;
+        }
+
+        .button:hover {
+            background: #008c93;
+        }
+
+        /* Social Sharing */
+        .social-share {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-share a {
+            color: #e0e0e0;
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        .social-share a:hover {
+            color: #00adb5;
+        }
+
+        /* Footer */
+        .footer {
+            background: #1e1e1e;
+            color: #999;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid #333;
+        }
+
+        .footer a {
+            color: #00adb5;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            .nav ul {
+                flex-direction: column;
+                text-align: center;
+            }
+            .article-container, .sidebar {
+                padding: 1rem;
+            }
+            .article h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>代码世界</h1>
+        <p>探索编程的奥秘，分享技术与洞见</p>
+    </header>
+
+    <nav class="nav">
+        <ul>
+            <li><a href="#home">首页</a></li>
+            <li><a href="#articles">文章</a></li>
+            <li><a href="#tutorials">教程</a></li>
+            <li><a href="#about">关于</a></li>
+            <li><a href="#contact">联系</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-container">
+        <section class="article-container">
+            <article class="article">
+                <h1>深入理解JavaScript异步编程</h1>
+                <div class="meta">
+                    <span>发布时间: 2025年6月2日</span> | <span>作者: 小刚</span>
+                </div>
+
+                <h2>什么是异步编程？</h2>
+                <p>异步编程是JavaScript的核心特性，允许非阻塞操作以提高程序效率。现代JavaScript通过 <code>Promise</code>、<code>async/await</code> 等机制简化了异步操作，使代码更易读和维护。</p>
+
+                <h2>代码示例</h2>
+                <pre><code>async function fetchData() {
+    try {
+        const response = await fetch('https://api.example.com/data');
+        const data = await response.json();
+        console.log(data);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+fetchData();
+                </code></pre>
+
+                <h2>注意事项</h2>
+                <p>异步编程需要关注错误处理、性能优化以及避免回调地狱。合理使用 <code>try/catch</code> 和 <code>Promise.all</code> 可以提升代码健壮性。</p>
+
+                <h2>进阶技巧</h2>
+                <p>例如，可以通过 <code>Promise.race</code> 实现超时控制，或者使用 <code>async/await</code> 结合 <code>for...of</code> 处理顺序执行的异步任务。</p>
+
+                <a href="#more" class="button">了解更多</a>
+
+                <div class="social-share">
+                    <p>分享文章：</p>
+                    <a href="#" title="分享到微信"><i class="fab fa-weixin"></i></a>
+                    <a href="#" title="分享到微博"><i class="fab fa-weibo"></i></a>
+                    <a href="#" title="分享到Twitter"><i class="fab fa-twitter"></i></a>
+                </div>
+            </article>
+        </section>
+
+        <aside class="sidebar">
+            <h3>热门文章</h3>
+            <ul>
+                <li><a href="#">JavaScript 事件循环详解</a></li>
+                <li><a href="#">TypeScript 入门指南</a></li>
+                <li><a href="#">React 性能优化技巧</a></li>
+            </ul>
+
+            <h3>分类</h3>
+            <ul>
+                <li><a href="#">前端开发</a></li>
+                <li><a href="#">后端开发</a></li>
+                <li><a href="#">全栈开发</a></li>
+            </ul>
+
+            <h3>订阅</h3>
+            <p>订阅我们的 newsletter 获取最新文章！</p>
+            <form>
+                <input type="email" placeholder="输入您的邮箱" style="padding: 0.5rem; width: 100%; margin-bottom: 1rem; border-radius: 4px; border: none;">
+                <button type="submit" class="button">订阅</button>
+            </form>
+        </aside>
+    </div>
+
+    <footer class="footer">
+        <p>© 2025 代码世界. 保留所有权利. | <a href="#privacy">隐私政策</a> | <a href="#terms">服务条款</a></p>
+    </footer>
+
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>`,
                 个人作品集: `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
