@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>增强版HTML编辑器与预览</title>
+    <!-- 引入CodeMirror CSS -->
+    <script src="a0.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/material.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/dialog/dialog.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #6366f1;
+            --accent-color: #8b5cf6;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border: #475569;
+            --border-light: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--background) 0%, #1e293b 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--surface-light);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+            transform: translateY(-1px);
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+        }
+
+        .btn-icon:hover {
+            background: var(--surface-light);
+            color: var(--text-primary);
+        }
+
+        .theme-selector {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            background: var(--surface-light);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 5rem);
+            gap: 0.5rem;
+            padding: 0.5rem;
+        }
+
+        .editor-panel, .preview-panel {
+            flex: 1;
+            background: var(--surface);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .panel-header {
+            background: var(--surface-light);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .CodeMirror {
+            height: calc(100% - 3rem) !important;
+            font-size: 14px;
+            font-family: 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+            line-height: 1.5;
+        }
+
+        .preview-frame {
+            width: 100%;
+            height: calc(100% - 3rem);
+            border: none;
+            background: white;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            background: var(--surface-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .sidebar-tab.active {
+            background: var(--surface);
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .sidebar-tab:hover:not(.active) {
+            background: var(--border);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .guide-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .guide-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .guide-section pre {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            margin: 0.75rem 0;
+        }
+
+        .guide-section code {
+            background: var(--background);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .shortcuts-grid {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: var(--background);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+
+        .shortcut-key {
+            background: var(--surface-light);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+        }
+
+        .templates-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .template-item {
+            padding: 1rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .template-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .template-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .template-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .toast {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 40%;
+            }
+            
+            .app-header {
+                padding: 1rem;
+            }
+            
+            .toolbar {
+                gap: 0.25rem;
+            }
+            
+            .btn {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-light);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <h1 class="app-title">🚀 HTML Studio</h1>
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="pasteFromClipboard()">
+                📋 粘贴
+            </button>
+            <button class="btn btn-secondary" onclick="copyCode()">
+                📋 复制
+            </button>
+            <button class="btn btn-secondary" id="clearBtn" title="清空代码">
+                🗑️ 清空代码
+            </button>
+            <button class="btn btn-secondary" id="importBtn">
+                📥 导入文件
+            </button>
+            <button class="btn btn-secondary" onclick="exportHTML()">
+                📤 导出
+            </button>
+            <button class="btn btn-secondary" id="undoBtn" title="上一步 (Ctrl+Z)">
+                ⬅️ 上一步
+            </button>
+            <button class="btn btn-secondary" id="redoBtn" title="下一步 (Ctrl+Y)">
+                ➡️ 下一步
+            </button>
+            <input type="file" id="importFile" accept=".html,.htm,.txt" style="display:none">
+            <button class="btn btn-icon" onclick="toggleFullscreen()" title="全屏预览">
+                🔍
+            </button>
+            <!-- 新增颜色选择器按钮 -->
+            <button class="btn btn-secondary" id="colorPickerBtn" title="选择颜色">
+                🎨 颜色选择
+            </button>
+            <select class="theme-selector" onchange="changeTheme(this.value)">
+                <option value="material">Material Dark</option>
+                <option value="monokai">Monokai</option>
+                <option value="default">Default</option>
+            </select>
+        </div>
+       
+    </div>
+
+    <div class="main-container">
+        <div class="editor-panel">
+            <div class="panel-header">
+                <span>📝 HTML 编辑器</span>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span id="lineCount">行: 1 | 列: 1</span>
+                </div>
+            </div>
+            <textarea id="codeEditor"><!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的精美网页</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .hero {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>🌟 欢迎来到我的网站</h1>
+            <p>这是一个使用现代HTML和CSS技术构建的精美网页，展示了渐变背景、卡片设计和响应式布局等特性。</p>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3>现代设计</h3>
+                <p>采用现代化的UI设计理念，包含渐变色彩、阴影效果和流畅的动画。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>响应式布局</h3>
+                <p>完美适配各种设备尺寸，从手机到桌面端都能提供优秀的用户体验。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>高性能</h3>
+                <p>优化的CSS和HTML结构确保快速加载和流畅的用户交互体验。</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html></textarea>
+        </div>
+
+        <div class="preview-panel">
+            <div class="panel-header">
+                <span>👁️ 实时预览</span>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>实时同步</span>
+                </div>
+            </div>
+            <iframe class="preview-frame" id="previewFrame"></iframe>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-tabs">
+                <div class="sidebar-tab active" onclick="switchTab('shortcuts')">快捷键</div>
+                <div class="sidebar-tab" onclick="switchTab('templates')">模板</div>
+                <div class="sidebar-tab" onclick="switchTab('guide')">指南</div>
+            </div>
+            
+            <div class="sidebar-content">
+                <div id="shortcuts-tab" class="tab-content">
+                    <div class="guide-section">
+                        <h3>🏷️ 常用标签写入</h3>
+                        <div class="shortcuts-grid" id="insert-tags-grid">
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;p&gt;&lt;/p&gt;">段落</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;a href=''&gt;超链接&lt;/a&gt;">超链接</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;!DOCTYPE html&gt;">!DOCTYPE html</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;abbr&gt;&lt;/abbr&gt;">缩写</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;address&gt;&lt;/address&gt;">地址</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;area&gt;">图像映射区域</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;article&gt;&lt;/article&gt;">文章</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;aside&gt;&lt;/aside&gt;">侧边栏</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;audio src='audio.mp3' controls&gt;不支持音频&lt;/audio&gt;">音乐</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;audio src='background.mp3' autoplay loop hidden&gt;&lt;/audio&gt;">背景音乐</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;audio src='audio.mp3' controls&gt;不支持音频&lt;/audio&gt;">插入视频</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;img src='img.jpg' alt='示例图片' width=20%&gt;">图片</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;figure&gt;
+                                &lt;img src='img.jpg' alt='示例图片' width=20%&gt;
+                                &lt;figcaption&gt;图片说明文字&lt;/figcaption&gt;
+                            &lt;/figure&gt;">图片说明文字</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;b&gt;&lt;/b&gt;">粗体</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;base&gt;">基准URL</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;bdi&gt;&lt;/bdi&gt;">文本方向隔离</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;bdo&gt;&lt;/bdo&gt;">文本方向覆盖</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;blockquote&gt;&lt;/blockquote&gt;">块引用</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;body&gt;&lt;/body&gt;">文档主体</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;br&gt;">换行</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;button&gt;&lt;/button&gt;">按钮</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;canvas&gt;&lt;/canvas&gt;">画布</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;caption&gt;&lt;/caption&gt;">表格标题</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;cite&gt;&lt;/cite&gt;">引用来源</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;pre&gt;&lt;code&gt;&lt;/code&gt;&lt;/pre&gt;">代码</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;col&gt;">表格列</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;colgroup&gt;&lt;/colgroup&gt;">表格列组</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;data&gt;&lt;/data&gt;">机器可读数据</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;datalist&gt;&lt;/datalist&gt;">选项列表</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;dd&gt;&lt;/dd&gt;">定义描述</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;del&gt;&lt;/del&gt;">删除文本</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;details&gt;&lt;/details&gt;">详细信息</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;dfn&gt;&lt;/dfn&gt;">定义术语</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;dialog&gt;&lt;/dialog&gt;">对话框</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;div&gt;&lt;/div&gt;">分区</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;dl&gt;&lt;/dl&gt;">定义列表</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;dt&gt;&lt;/dt&gt;">定义术语</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;em&gt;&lt;/em&gt;">强调</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;embed&gt;">嵌入内容</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;fieldset&gt;&lt;/fieldset&gt;">表单分组</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;figcaption&gt;&lt;/figcaption&gt;">图例标题</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;figure&gt;&lt;/figure&gt;">图例</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;footer&gt;&lt;/footer&gt;">页脚</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;form&gt;&lt;/form&gt;">表单</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;h1&gt;&lt;/h1&gt;">标题1</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;h2&gt;&lt;/h2&gt;">标题2</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;h3&gt;&lt;/h3&gt;">标题3</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;h4&gt;&lt;/h4&gt;">标题4</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;h5&gt;&lt;/h5&gt;">标题5</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;h6&gt;&lt;/h6&gt;">标题6</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;details&gt;
+                                &lt;summary&gt;展开/收起标题&lt;/summary&gt;
+                                &lt;p&gt;详细内容&lt;/p&gt;
+                            &lt;/details&gt;">展开/收起标</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;head&gt;&lt;/head&gt;">文档头部</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;header&gt;&lt;/header&gt;">页眉</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;hr&gt;">水平线</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;html&gt;&lt;/html&gt;">HTML根元素</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;i&gt;&lt;/i&gt;">斜体</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;iframe&gt;&lt;/iframe&gt;">内联框架</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;input&gt;">输入框</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;ins&gt;&lt;/ins&gt;">插入文本</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;kbd&gt;&lt;/kbd&gt;">键盘输入</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;label&gt;&lt;/label&gt;">标签</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;legend&gt;&lt;/legend&gt;">表单标题</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;li&gt;&lt;/li&gt;">列表项</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;link&gt;">外部资源链接</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;main&gt;&lt;/main&gt;">主要内容</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;map&gt;&lt;/map&gt;">图像映射</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;mark&gt;&lt;/mark&gt;">标记</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;meta&gt;">元数据</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;meter&gt;&lt;/meter&gt;">计量器</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;nav&gt;&lt;/nav&gt;">导航</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;noscript&gt;&lt;/noscript&gt;">无脚本内容</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;object&gt;&lt;/object&gt;">嵌入对象</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;ol&gt;&lt;/ol&gt;">有序列表</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;optgroup&gt;&lt;/optgroup&gt;">选项组</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;option&gt;&lt;/option&gt;">选项</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;output&gt;&lt;/output&gt;">输出</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;p&gt;&lt;/p&gt;">段落</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;param&gt;">参数</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;picture&gt;&lt;/picture&gt;">图片集</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;pre&gt;&lt;/pre&gt;">预格式文本</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;progress&gt;&lt;/progress&gt;">进度条</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;q&gt;&lt;/q&gt;">短引用</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;rp&gt;&lt;/rp&gt;">ruby备用文本</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;rt&gt;&lt;/rt&gt;">ruby注释文本</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;ruby&gt;&lt;/ruby&gt;">ruby文本</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;s&gt;&lt;/s&gt;">删除线</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;samp&gt;&lt;/samp&gt;">样本输出</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;script&gt;&lt;/script&gt;">脚本</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;section&gt;&lt;/section&gt;">节</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;select&gt;&lt;/select&gt;">下拉列表</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;small&gt;&lt;/small&gt;">小号文本</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;source&gt;">多媒体资源</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;span&gt;&lt;/span&gt;">内联容器</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;strong&gt;&lt;/strong&gt;">加重语气</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;style&gt;&lt;/style&gt;">样式</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;sub&gt;&lt;/sub&gt;">下标</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;summary&gt;&lt;/summary&gt;">详细摘要</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;sup&gt;&lt;/sup&gt;">上标</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;table&gt;&lt;/table&gt;">表格</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;tbody&gt;&lt;/tbody&gt;">表格主体</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;td&gt;&lt;/td&gt;">表格单元格</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;template&gt;&lt;/template&gt;">模板</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;textarea&gt;&lt;/textarea&gt;">多行文本输入</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;tfoot&gt;&lt;/tfoot&gt;">表格脚</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;th&gt;&lt;/th&gt;">表头单元格</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;thead&gt;&lt;/thead&gt;">表格头</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;time&gt;&lt;/time&gt;">时间</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;title&gt;&lt;/title&gt;">标题</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;tr&gt;&lt;/tr&gt;">表格行</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;track&gt;">轨道</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;u&gt;&lt;/u&gt;">下划线</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;ul&gt;&lt;/ul&gt;">无序列表</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;var&gt;&lt;/var&gt;">变量</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;wbr&gt;">可选换行</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="&lt;abbr title='HyperText Markup Language'&gt;HTML&lt;/abbr&gt; &lt;!-- 缩写 --&gt;;">缩写 </button>
+                            
+                                                    </div>
+                                                    <h3>🎨 CSS属性写入</h3>
+                                                    <div class="shortcuts-grid" id="insert-tags-grid">
+                                                        <!-- 布局与盒模型 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="display: ">定义元素的显示类型 示例：display: flex;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="position: ">设置定位方式 示例：position: absolute;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="top: ">顶部偏移量 示例：top: 10px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="right: ">右侧偏移量 示例：right: 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="bottom: ">底部偏移量 示例：bottom: 0;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="left: ">左侧偏移量 示例：left: 0;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="z-index: ">层叠顺序 示例：z-index: 100;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="float: ">浮动方式 示例：float: right;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="clear: ">清除浮动影响 示例：clear: both;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="width: ">宽度 示例：width: 200px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="min-width: ">最小宽度 示例：min-width: 100px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="max-width: ">最大宽度 示例：max-width: 400px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="height: ">高度 示例：height: 150px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="min-height: ">最小高度 示例：min-height: 50px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="max-height: ">最大高度 示例：max-height: 300px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="margin: ">外边距 示例：margin: 10px 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="margin-top: ">顶部外边距 示例：margin-top: 10px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="margin-right: ">右侧外边距 示例：margin-right: 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="margin-bottom: ">底部外边距 示例：margin-bottom: 10px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="margin-left: ">左侧外边距 示例：margin-left: 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="padding: ">内边距 示例：padding: 8px 16px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="padding-top: ">顶部内边距 示例：padding-top: 8px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="padding-right: ">右侧内边距 示例：padding-right: 16px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="padding-bottom: ">底部内边距 示例：padding-bottom: 8px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="padding-left: ">左侧内边距 示例：padding-left: 16px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="box-sizing: ">盒模型计算方式 示例：box-sizing: border-box;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="overflow: ">内容溢出处理 示例：overflow: auto;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="overflow-x: ">水平方向溢出处理 示例：overflow-x: scroll;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="overflow-y: ">垂直方向溢出处理 示例：overflow-y: hidden;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="gap: ">项目间距（格栅/Flex布局） 示例：gap: 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="row-gap: ">行间距（格栅/Flex布局） 示例：row-gap: 15px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-gap: ">列间距（格栅/Flex布局） 示例：column-gap: 15px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="inset: ">定位偏移量综合设置 示例：inset: 10px 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="contain: ">元素隔离与性能优化 示例：contain: strict;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="isolation: ">创建新的层叠上下文 示例：isolation: isolate;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="aspect-ratio: ">宽高比 示例：aspect-ratio: 16 / 9;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="box-decoration-break: ">分片盒模型行为 示例：box-decoration-break: clone;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="break-inside: ">控制分页或分片 示例：break-inside: avoid;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="break-before: ">分页前行为 示例：break-before: page;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="break-after: ">分页后行为 示例：break-after: avoid;</button>
+                            
+                            <!-- 边框与圆角 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border: ">边框综合设置 示例：border: 1px solid #333;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-width: ">边框宽度 示例：border-width: 2px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-style: ">边框样式 示例：border-style: dashed;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-color: ">边框颜色 示例：border-color: red;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-top: ">顶部边框 示例：border-top: 1px solid #000;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-right: ">右侧边框 示例：border-right: 2px dashed blue;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-bottom: ">底部边框 示例：border-bottom: 1px solid green;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-left: ">左侧边框 示例：border-left: 3px double red;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-radius: ">圆角半径 示例：border-radius: 10px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-top-left-radius: ">左上圆角 示例：border-top-left-radius: 5px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-top-right-radius: ">右上圆角 示例：border-top-right-radius: 5px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-bottom-left-radius: ">左下圆角 示例：border-bottom-left-radius: 5px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-bottom-right-radius: ">右下圆角 示例：border-bottom-right-radius: 5px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="outline: ">轮廓线 示例：outline: 2px solid blue;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="outline-width: ">轮廓线宽度 示例：outline-width: 2px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="outline-style: ">轮廓线样式 示例：outline-style: dotted;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="outline-color: ">轮廓线颜色 示例：outline-color: #000;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="outline-offset: ">轮廓线偏移 示例：outline-offset: 5px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-image: ">边框图片 示例：border-image: url(border.png) 30;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-image-source: ">边框图片来源 示例：border-image-source: url(border.png);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-image-slice: ">边框图片裁切 示例：border-image-slice: 30;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-image-width: ">边框图片宽度 示例：border-image-width: 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-image-outset: ">边框图片外延 示例：border-image-outset: 10px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-image-repeat: ">边框图片重复方式 示例：border-image-repeat: stretch;</button>
+                            
+                            <!-- 背景 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background: ">背景综合设置 示例：background: #fff url(bg.jpg) no-repeat center;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-color: ">背景色 示例：background-color: #f8f8f8;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-image: ">背景图片 示例：background-image: url(bg.png);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-size: ">背景尺寸 示例：background-size: cover;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-repeat: ">背景是否重复 示例：background-repeat: no-repeat;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-position: ">背景位置 示例：background-position: right top;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-attachment: ">背景滚动行为 示例：background-attachment: fixed;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-position-x: ">背景水平位置 示例：background-position-x: center;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-position-y: ">背景垂直位置 示例：background-position-y: top;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-clip: ">背景绘制区域 示例：background-clip: border-box;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-origin: ">背景定位原点 示例：background-origin: content-box;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="background-blend-mode: ">背景混合模式 示例：background-blend-mode: multiply;</button>
+                            
+                            <!-- 字体与文本 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="color: ">字体颜色 示例：color: #222;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="font-size: ">字体大小 示例：font-size: 18px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="font-family: ">字体系列 示例：font-family: Arial, sans-serif;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="font-weight: ">字体粗细 示例：font-weight: bold;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="font-style: ">字体样式（斜体等） 示例：font-style: italic;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-align: ">文字水平对齐方式 示例：text-align: center;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-decoration: ">文字装饰线 示例：text-decoration: underline;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="line-height: ">行高 示例：line-height: 1.8;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="letter-spacing: ">字符间距 示例：letter-spacing: 2px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="word-spacing: ">单词间距 示例：word-spacing: 8px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-transform: ">大小写转换 示例：text-transform: uppercase;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-shadow: ">文字阴影 示例：text-shadow: 1px 1px 3px #999;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="white-space: ">空白符处理方式 示例：white-space: nowrap;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="direction: ">文字方向 示例：direction: rtl;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="font: ">字体综合设置 示例：font: italic bold 16px Arial;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="font-variant: ">字体变体 示例：font-variant: small-caps;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="font-stretch: ">字体拉伸 示例：font-stretch: condensed;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="font-size-adjust: ">字体大小调整 示例：font-size-adjust: 0.5;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-align-last: ">最后一行对齐 示例：text-align-last: justify;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-decoration-color: ">装饰线颜色 示例：text-decoration-color: red;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-decoration-style: ">装饰线样式 示例：text-decoration-style: wavy;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-decoration-line: ">装饰线类型 示例：text-decoration-line: underline;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-decoration-thickness: ">装饰线粗细 示例：text-decoration-thickness: 2px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-indent: ">首行缩进 示例：text-indent: 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-overflow: ">文本溢出处理 示例：text-overflow: ellipsis;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-justify: ">文本对齐方式 示例：text-justify: inter-word;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="word-break: ">单词换行方式 示例：word-break: break-all;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="word-wrap: ">单词换行（旧名，推荐overflow-wrap） 示例：word-wrap: break-word;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="overflow-wrap: ">单词换行 示例：overflow-wrap: break-word;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="hyphens: ">连字符断词 示例：hyphens: auto;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="tab-size: ">制表符大小 示例：tab-size: 4;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="unicode-bidi: ">Unicode双向算法 示例：unicode-bidi: bidi-override;</button>
+                            
+                            <!-- Flex布局 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="flex-direction: ">主轴方向 示例：flex-direction: column;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="flex-wrap: ">是否换行 示例：flex-wrap: wrap;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="flex-flow: ">方向与换行 示例：flex-flow: row wrap;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="justify-content: ">主轴对齐方式 示例：justify-content: space-between;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="align-items: ">侧轴对齐方式 示例：align-items: center;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="align-content: ">多行侧轴对齐 示例：align-content: stretch;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="order: ">排序顺序 示例：order: 2;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="flex-grow: ">放大比例 示例：flex-grow: 1;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="flex-shrink: ">缩小比例 示例：flex-shrink: 0;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="flex-basis: ">初始大小 示例：flex-basis: 100px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="flex: ">Flex综合设置 示例：flex: 1 0 auto;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="align-self: ">单个项目的侧轴对齐 示例：align-self: flex-end;</button>
+                            
+                            <!-- Grid布局 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-template-columns: ">列轨道分布 示例：grid-template-columns: 1fr 2fr;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-template-rows: ">行轨道分布 示例：grid-template-rows: 100px 200px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-column: ">元素跨越列数 示例：grid-column: 1 / 3;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-row: ">元素跨越行数 示例：grid-row: 2 / 4;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-area: ">区域名称或位置 示例：grid-area: header;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-gap: ">网格间距（旧名，推荐gap） 示例：grid-gap: 16px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-template-areas: ">网格区域命名 示例：grid-template-areas: 'header header' 'main sidebar';</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-auto-columns: ">自动列大小 示例：grid-auto-columns: minmax(100px, auto);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-auto-rows: ">自动行大小 示例：grid-auto-rows: 100px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid-auto-flow: ">自动放置方式 示例：grid-auto-flow: dense;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="grid: ">网格综合设置 示例：grid: 100px 1fr / 1fr 2fr;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="justify-items: ">网格项主轴对齐 示例：justify-items: center;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="align-items: ">网格项侧轴对齐 示例：align-items: start;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="justify-content: ">网格主轴内容对齐 示例：justify-content: space-evenly;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="align-content: ">网格侧轴内容对齐 示例：align-content: space-around;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="justify-self: ">单个网格项主轴对齐 示例：justify-self: end;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="align-self: ">单个网格项侧轴对齐 示例：align-self: center;</button>
+                            
+                            <!-- 其他视觉样式 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="opacity: ">不透明度 示例：opacity: 0.6;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="box-shadow: ">元素阴影 示例：box-shadow: 2px 2px 8px #aaa;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="cursor: ">鼠标形状 示例：cursor: pointer;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="visibility: ">可见性 示例：visibility: hidden;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="transition: ">过渡动画 示例：transition: all 0.3s;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="transform: ">变换（旋转/缩放等） 示例：transform: scale(1.1);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="animation: ">动画属性 示例：animation: fadeIn 1s ease-in;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="transform-origin: ">变换原点 示例：transform-origin: center top;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="transform-style: ">变换样式 示例：transform-style: preserve-3d;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="perspective: ">透视距离 示例：perspective: 1000px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="perspective-origin: ">透视原点 示例：perspective-origin: 50% 50%;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="backface-visibility: ">背面是否可见 示例：backface-visibility: hidden;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="filter: ">图像/内容滤镜 示例：filter: blur(3px);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="mix-blend-mode: ">混合模式 示例：mix-blend-mode: multiply;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="clip-path: ">裁剪路径 示例：clip-path: circle(50%);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="mask: ">蒙版设置 示例：mask: url(mask.png);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="mask-image: ">蒙版图片 示例：mask-image: url(mask.png);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="mask-position: ">蒙版位置 示例：mask-position: center;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="mask-size: ">蒙版大小 示例：mask-size: cover;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="mask-repeat: ">蒙版重复 示例：mask-repeat: no-repeat;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="will-change: ">优化提示 示例：will-change: transform;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="scroll-behavior: ">滚动行为 示例：scroll-behavior: smooth;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="scroll-snap-type: ">滚动吸附类型 示例：scroll-snap-type: y mandatory;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="scroll-snap-align: ">滚动吸附对齐 示例：scroll-snap-align: start;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="scroll-snap-stop: ">滚动吸附停止 示例：scroll-snap-stop: always;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="scroll-padding: ">滚动内边距 示例：scroll-padding: 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="scroll-margin: ">滚动外边距 示例：scroll-margin: 10px;</button>
+                            
+                            <!-- 列表 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="list-style: ">列表样式 示例：list-style: square inside;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="list-style-type: ">列表标记类型 示例：list-style-type: decimal;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="list-style-image: ">列表自定义图片标记 示例：list-style-image: url(icon.png);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="list-style-position: ">列表标记位置 示例：list-style-position: inside;</button>
+                            
+                            <!-- 表格 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-collapse: ">边框合并 示例：border-collapse: collapse;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="border-spacing: ">单元格间距 示例：border-spacing: 6px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="table-layout: ">表格布局算法 示例：table-layout: fixed;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="caption-side: ">表格标题位置 示例：caption-side: bottom;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="empty-cells: ">空单元格显示 示例：empty-cells: hide;</button>
+                            
+                            <!-- 动画与过渡 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="animation-name: ">动画名称 示例：animation-name: fadeIn;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="animation-duration: ">动画持续时间 示例：animation-duration: 1s;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="animation-timing-function: ">动画时间函数 示例：animation-timing-function: ease-in;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="animation-delay: ">动画延迟 示例：animation-delay: 0.5s;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="animation-iteration-count: ">动画循环次数 示例：animation-iteration-count: infinite;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="animation-direction: ">动画播放方向 示例：animation-direction: alternate;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="animation-fill-mode: ">动画填充模式 示例：animation-fill-mode: forwards;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="animation-play-state: ">动画播放状态 示例：animation-play-state: paused;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="transition-property: ">过渡属性 示例：transition-property: opacity;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="transition-duration: ">过渡持续时间 示例：transition-duration: 0.3s;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="transition-timing-function: ">过渡时间函数 示例：transition-timing-function: ease;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="transition-delay: ">过渡延迟 示例：transition-delay: 0.2s;</button>
+                            
+                            <!-- 其他交互与行为 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="pointer-events: ">鼠标事件响应 示例：pointer-events: none;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="user-select: ">是否允许选中文本 示例：user-select: none;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="touch-action: ">触摸行为控制 示例：touch-action: none;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="resize: ">用户是否能调整大小 示例：resize: both;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="caret-color: ">插入光标颜色 示例：caret-color: blue;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="accent-color: ">表单控件强调颜色 示例：accent-color: purple;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="appearance: ">控件外观 示例：appearance: none;</button>
+                            
+                            <!-- 图像与媒体 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="object-fit: ">媒体填充方式 示例：object-fit: cover;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="object-position: ">媒体位置 示例：object-position: center;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="image-rendering: ">图像渲染方式 示例：image-rendering: pixelated;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="image-orientation: ">图像方向 示例：image-orientation: from-image;</button>
+                            
+                            <!-- 内容与伪元素 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="content: ">伪元素内容 示例：content: 'Hello!';</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="counter-increment: ">计数器增量 示例：counter-increment: section;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="counter-reset: ">计数器重置 示例：counter-reset: section;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="counter-set: ">计数器设置 示例：counter-set: section 0;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="quotes: ">引号样式 示例：quotes: '«' '»';</button>
+                            
+                            <!-- 打印与分页 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="page-break-before: ">打印分页前行为（旧名，推荐break-before） 示例：page-break-before: always;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="page-break-after: ">打印分页后行为（旧名，推荐break-after） 示例：page-break-after: avoid;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="page-break-inside: ">打印分页内行为（旧名，推荐break-inside） 示例：page-break-inside: avoid;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="orphans: ">页面底行数控制 示例：orphans: 2;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="widows: ">页面顶行数控制 示例：widows: 2;</button>
+                            
+                            <!-- 文本流与多列布局 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="writing-mode: ">文字流向 示例：writing-mode: vertical-rl;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="columns: ">多列布局综合设置 示例：columns: 200px 3;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-count: ">列数 示例：column-count: 3;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-width: ">列宽 示例：column-width: 200px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-gap: ">列间距 示例：column-gap: 20px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-rule: ">列分隔线 示例：column-rule: 1px solid #000;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-rule-width: ">列分隔线宽度 示例：column-rule-width: 2px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-rule-style: ">列分隔线样式 示例：column-rule-style: dashed;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-rule-color: ">列分隔线颜色 示例：column-rule-color: blue;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-span: ">跨列设置 示例：column-span: all;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="column-fill: ">列填充方式 示例：column-fill: balance;</button>
+                            
+                            <!-- 自定义属性与变量 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="--variable: ">定义CSS自定义属性 示例：--main-color: #333;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="var(--variable): ">使用CSS自定义属性 示例：color: var(--main-color);</button>
+                            
+                            <!-- 可访问性与交互 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="forced-color-adjust: ">强制颜色调整（高对比模式） 示例：forced-color-adjust: auto;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="speak: ">语音合成（实验性） 示例：speak: never;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="voice-family: ">语音合成音色（实验性） 示例：voice-family: male;</button>
+                            
+                            <!-- 其他高级属性 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="all: ">重置所有CSS属性 示例：all: initial;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="contain-intrinsic-size: ">固有尺寸 示例：contain-intrinsic-size: 300px 150px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="content-visibility: ">内容可见性优化 示例：content-visibility: auto;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="shape-outside: ">外形环绕 示例：shape-outside: circle(50%);</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="shape-margin: ">外形边缘距离 示例：shape-margin: 10px;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="shape-image-threshold: ">外形透明度阈值 示例：shape-image-threshold: 0.7;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-emphasis: ">文本强调标记 示例：text-emphasis: filled circle;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-emphasis-style: ">文本强调样式 示例：text-emphasis-style: dot;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-emphasis-color: ">文本强调颜色 示例：text-emphasis-color: red;</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag="text-emphasis-position: ">文本强调位置 示例：text-emphasis-position: over;</button>
+                                                    </div>
+                                                    <h3>😶‍🌫️ 选择器写入</h3>
+                                                    <div class="shortcuts-grid" id="insert-tags-grid">
+                                                        <!-- 更多伪类选择器 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":first: ">选择第一个匹配的元素（动态伪类） 示例：tr:first { ... }</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":last: ">选择最后一个匹配的元素（动态伪类） 示例：tr:last { ... }</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":nth-child(odd): ">选择奇数位置的子元素 示例：li:nth-child(odd) { ... }</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":nth-child(even): ">选择偶数位置的子元素 示例：li:nth-child(even) { ... }</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":nth-last-child(n): ">从后向前数第n个子元素 示例：li:nth-last-child(2) { ... }</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":nth-last-of-type(n): ">从后向前数同类型第n个元素 示例：p:nth-last-of-type(1) { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":focus-within: ">包含获得焦点元素的祖先元素 示例：form:focus-within { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":focus-visible: ">当元素获得键盘焦点或适合视觉焦点的元素 示例：button:focus-visible { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":where(selector): ">匹配指定选择器列表的元素 示例：:where(.class1, .class2) { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":is(selector): ">匹配指定选择器列表的元素（与:where类似但优先级不同） 示例：:is(h1, h2, h3) { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":has(selector): ">包含指定选择器元素的父元素 示例：div:has(> p) { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":default: ">表单默认选中的元素 示例：option:default { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":indeterminate: ">处于不确定状态的表单元素 示例：input:indeterminate { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":placeholder-shown: ">显示占位符的输入框 示例：input:placeholder-shown { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":autofill: ">被浏览器自动填充的表单元素 示例：input:autofill { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":fullscreen: ">处于全屏模式的元素 示例：video:fullscreen { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":modal: ">处于模态状态的元素（如dialog） 示例：dialog:modal { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":picture-in-picture: ">处于画中画模式的元素 示例：video:picture-in-picture { ... }</button>
+                            
+                            <!-- 更多伪元素选择器 -->
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag="::after: ">元素后插入内容 示例：.icon::after { content: '✓'; }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag="::first-letter: ">首字母 示例：p::first-letter { font-size: 2em; }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag="::marker: ">列表项的标记（如项目符号） 示例::marker { color: red; }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag="::backdrop: ">全屏或对话框的背景层 示例::backdrop { background: rgba(0,0,0,0.5); }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag="::part(name): ">Web组件中的指定部分 示例::part(theme) { background: blue; }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag="::slotted(selector): ">Web组件中插槽内容 示例::slotted(span) { color: green; }</button>
+                            
+                            <!-- 更多属性选择器 -->
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag="[attribute~='value']: ">属性值包含某单词的元素 示例：[class~='active'] { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag="[attribute|='value']: ">属性值以value开头或等于value的元素 示例：[lang|='en'] { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag="[attribute='value' i]: ">属性值等于value（忽略大小写） 示例：[type='text' i] { ... }</button>
+                            
+                            <!-- 逻辑组合选择器 -->
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":matches(selector): ">匹配选择器列表的元素（旧版:is） 示例：:matches(h1, h2) { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":any(selector): ">匹配选择器列表的元素（旧版） 示例：:any(.class1, .class2) { ... }</button>
+                            
+                            <!-- 状态相关伪类 -->
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":hover-track: ">鼠标轨迹经过的元素（实验性） 示例：div:hover-track { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":current: ">当前活动的元素（动态伪类，实验性） 示例::current { background: yellow; }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":past: ">时间轴上之前的元素（动态伪类，实验性） 示例::past { opacity: 0.5; }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":future: ">时间轴上后续的元素（动态伪类，实验性） 示例::future { display: none; }</button>
+                            
+                            <!-- 更多结构性伪类 -->
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":nth-last-child(odd): ">从后向前数奇数位置的子元素 示例：li:nth-last-child(odd) { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":nth-last-child(even): ">从后向前数偶数位置的子元素 示例：li:nth-last-child(even) { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":only-of-type: ">仅有一个同类型子元素的元素 示例：img:only-of-type { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":nth-of-type(odd): ">同类型奇数位置的元素 示例：p:nth-of-type(odd) { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":nth-of-type(even): ">同类型偶数位置的元素 示例：p:nth-of-type(even) { ... }</button>
+                            
+                            <!-- 媒体相关伪类 -->
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":playing: ">正在播放的媒体元素 示例：video:playing { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":paused: ">暂停的媒体元素 示例：video:paused { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":muted: ">静音的媒体元素 示例：audio:muted { ... }</button>
+                                                        <button class="btn btn-secondary tag-insert-btn" data-tag=":volume-locked: ">音量锁定的媒体元素（实验性） 示例：audio:volume-locked { ... }</button>
+                            
+                            <!-- 其他高级选择器 -->
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":scope: ">当前作用域的根元素 示例：:scope > div { ... }</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":host: ">Shadow DOM的宿主元素 示例：:host { display: block; }</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":host-context(selector): ">匹配Shadow DOM宿主上下文的元素 示例：:host-context(.dark-theme) { ... }</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":dir(ltr): ">左到右文本方向的元素 示例：:dir(ltr) { ... }</button>
+                            <button class="btn btn-secondary tag-insert-btn" data-tag=":dir(rtl): ">右到左文本方向的元素 示例：:dir(rtl) { ... }</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="templates-tab" class="tab-content hidden">
+                    <div class="guide-section">
+                        <h3>📄 HTML模板</h3>
+                        <div class="templates-grid" id="templates-grid"></div>
+                    </div>
+                </div>
+
+                <div id="guide-tab" class="tab-content hidden">
+                    <div class="guide-section">                      
+                       <details>
+                          <summary>📚 HTML基础</summary>
+                        <p>HTML是网页的骨架，定义了内容的结构和语义。</p>
+                        <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="zh-CN"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;页面标题&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;主标题&lt;/h1&gt;
+    &lt;p&gt;段落内容&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+                    </details>
+                  </div>
+                
+                <div class="guide-section">
+                      <details>
+                        <summary>🛠️ HTML标签</summary>
+                        <p>HTML常用标签聚合</p>
+                        <pre><code>&lt;!-- 文档结构和元信息 --&gt;
+&lt;!DOCTYPE html&gt; &lt;!-- 文档类型声明 --&gt;
+&lt;html&gt;        &lt;!-- 根标签 --&gt;
+&lt;head&gt;        &lt;!-- 文档头部 --&gt;
+    &lt;meta charset="UTF-8"&gt; &lt;!-- 字符编码声明 --&gt;
+    &lt;title&gt;网页标题&lt;/title&gt;
+    &lt;link rel="stylesheet" href="style.css"&gt; &lt;!-- 外部样式表 --&gt;
+    &lt;script src="script.js"&gt;&lt;/script&gt;        &lt;!-- 外部脚本 --&gt;
+&lt;/head&gt;
+&lt;body&gt;        &lt;!-- 网页主体内容 --&gt;
+
+&lt;!-- 结构与布局 --&gt;
+&lt;header&gt; &lt;!-- 页眉区域 --&gt;
+    &lt;h1&gt;网站标题&lt;/h1&gt;
+&lt;/header&gt;
+&lt;nav&gt; &lt;!-- 导航区域 --&gt;
+    &lt;ul&gt;
+        &lt;li&gt;&lt;a href="#home"&gt;首页&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="#about"&gt;关于&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+&lt;/nav&gt;
+&lt;main&gt; &lt;!-- 主要内容区 --&gt;
+    &lt;article&gt; &lt;!-- 独立内容块，如文章 --&gt;
+        &lt;h2&gt;文章标题&lt;/h2&gt;
+        &lt;p&gt;文章内容...&lt;/p&gt;
+    &lt;/article&gt;
+    &lt;section&gt; &lt;!-- 内容分区 --&gt;
+        &lt;h3&gt;分区标题&lt;/h3&gt;
+        &lt;p&gt;分区内容...&lt;/p&gt;
+    &lt;/section&gt;
+    &lt;aside&gt; &lt;!-- 侧边栏内容 --&gt;
+        &lt;p&gt;侧边信息&lt;/p&gt;
+    &lt;/aside&gt;
+&lt;/main&gt;
+&lt;footer&gt; &lt;!-- 页脚区域 --&gt;
+    &lt;p&gt;版权所有 &copy; 2025&lt;/p&gt;
+&lt;/footer&gt;
+
+&lt;!-- 标题与段落 --&gt;
+&lt;h1&gt;主标题&lt;/h1&gt;
+&lt;h2&gt;二级标题&lt;/h2&gt;
+&lt;h3&gt;三级标题&lt;/h3&gt;
+&lt;h4&gt;四级标题&lt;/h4&gt;
+&lt;h5&gt;五级标题&lt;/h5&gt;
+&lt;h6&gt;六级标题&lt;/h6&gt;
+&lt;p&gt;段落文本内容。&lt;/p&gt;
+
+&lt;!-- 文本格式化 --&gt;
+&lt;b&gt;加粗文本&lt;/b&gt;
+&lt;strong&gt;重要加粗&lt;/strong&gt;
+&lt;i&gt;斜体文本&lt;/i&gt;
+&lt;em&gt;强调文本&lt;/em&gt;
+&lt;mark&gt;高亮文本&lt;/mark&gt;
+&lt;small&gt;小号字体&lt;/small&gt;
+&lt;del&gt;删除线文本&lt;/del&gt;
+&lt;ins&gt;插入线文本&lt;/ins&gt;
+&lt;sub&gt;下标&lt;/sub&gt;
+&lt;sup&gt;上标&lt;/sup&gt;
+&lt;u&gt;下划线文本&lt;/u&gt;
+&lt;abbr title="HyperText Markup Language"&gt;HTML&lt;/abbr&gt; &lt;!-- 缩写 --&gt;
+&lt;q&gt;短引用&lt;/q&gt;
+&lt;blockquote&gt;长引用内容&lt;/blockquote&gt;
+&lt;cite&gt;引用来源&lt;/cite&gt;
+&lt;code&gt;内联代码&lt;/code&gt;
+&lt;pre&gt;
+多行
+预格式文本
+&lt;/pre&gt;
+&lt;kbd&gt;用户输入&lt;/kbd&gt;
+&lt;samp&gt;计算机输出&lt;/samp&gt;
+&lt;var&gt;变量&lt;/var&gt;
+&lt;time datetime="2025-06-06"&gt;2025年6月6日&lt;/time&gt;
+&lt;address&gt;联系地址&lt;/address&gt;
+&lt;br&gt; &lt;!-- 换行 --&gt;
+&lt;hr&gt; &lt;!-- 水平分隔线 --&gt;
+&lt;wbr&gt; &lt;!-- 建议换行位置 --&gt;
+
+&lt;!-- 超链接与锚点 --&gt;
+&lt;a href="https://example.com"&gt;点击访问&lt;/a&gt;
+&lt;a href="#section1"&gt;跳转到分区&lt;/a&gt;
+
+&lt;!-- 列表 --&gt;
+&lt;ul&gt;
+    &lt;li&gt;无序列表项&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol&gt;
+    &lt;li&gt;有序列表项&lt;/li&gt;
+&lt;/ol&gt;
+&lt;dl&gt;
+    &lt;dt&gt;术语&lt;/dt&gt;
+    &lt;dd&gt;术语解释&lt;/dd&gt;
+&lt;/dl&gt;
+
+&lt;!-- 图像与多媒体 --&gt;
+&lt;img src="img.jpg" alt="图片描述"&gt;
+&lt;figure&gt;
+    &lt;img src="img.jpg" alt="示例图片"&gt;
+    &lt;figcaption&gt;图片说明文字&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;audio src="audio.mp3" controls&gt;不支持音频&lt;/audio&gt;
+&lt;video src="movie.mp4" controls&gt;不支持视频&lt;/video&gt;
+&lt;source src="movie.webm" type="video/webm"&gt;
+&lt;track kind="subtitles" src="subtitle.vtt" srclang="zh" label="中文"&gt;
+&lt;embed src="file.pdf"&gt;
+&lt;object data="file.pdf" type="application/pdf"&gt;&lt;/object&gt;
+&lt;iframe src="https://example.com"&gt;&lt;/iframe&gt;
+&lt;canvas id="myCanvas" width="200" height="100"&gt;&lt;/canvas&gt;
+&lt;map name="mapname"&gt;
+    &lt;area shape="rect" coords="34,44,270,350" href="link.html"&gt;
+&lt;/map&gt;
+&lt;picture&gt;
+    &lt;source srcset="img.webp" type="image/webp"&gt;
+    &lt;img src="img.jpg" alt="图片"&gt;
+&lt;/picture&gt;
+
+&lt;!-- 表格 --&gt;
+&lt;table&gt;
+    &lt;caption&gt;表格标题&lt;/caption&gt;
+    &lt;thead&gt;
+        &lt;tr&gt;
+            &lt;th&gt;表头&lt;/th&gt;
+            &lt;th&gt;表头2&lt;/th&gt;
+        &lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody&gt;
+        &lt;tr&gt;
+            &lt;td&gt;数据1&lt;/td&gt;
+            &lt;td&gt;数据2&lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/tbody&gt;
+    &lt;tfoot&gt;
+        &lt;tr&gt;
+            &lt;td&gt;合计&lt;/td&gt;
+            &lt;td&gt;100&lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/tfoot&gt;
+&lt;/table&gt;
+&lt;tr&gt; &lt;!-- 表格行 --&gt;
+&lt;th&gt;表头单元格&lt;/th&gt;
+&lt;td&gt;数据单元格&lt;/td&gt;
+&lt;colgroup&gt;&lt;col span="2" style="background:yellow"&gt;&lt;/colgroup&gt;
+
+&lt;!-- 表单相关 --&gt;
+&lt;form action="/submit" method="post"&gt;
+    &lt;fieldset&gt;
+        &lt;legend&gt;表单分组&lt;/legend&gt;
+        &lt;label for="username"&gt;用户名&lt;/label&gt;
+        &lt;input type="text" id="username" name="username"&gt;
+        &lt;input type="password" name="pwd"&gt;
+        &lt;input type="checkbox" name="agree"&gt;
+        &lt;input type="radio" name="gender" value="male"&gt;
+        &lt;input type="submit" value="提交"&gt;
+        &lt;input type="reset" value="重置"&gt;
+        &lt;input type="file" name="upload"&gt;
+        &lt;input type="date" name="birthday"&gt;
+        &lt;input type="range" min="0" max="100"&gt;
+        &lt;input type="color" name="color"&gt;
+        &lt;input type="hidden" name="token" value="abc"&gt;
+        &lt;button type="button"&gt;按钮&lt;/button&gt;
+        &lt;select name="city"&gt;
+            &lt;option value="sh"&gt;上海&lt;/option&gt;
+            &lt;option value="bj"&gt;北京&lt;/option&gt;
+        &lt;/select&gt;
+        &lt;textarea name="desc"&gt;&lt;/textarea&gt;
+        &lt;datalist id="browsers"&gt;
+            &lt;option value="Chrome"&gt;
+            &lt;option value="Firefox"&gt;
+        &lt;/datalist&gt;
+        &lt;output name="result"&gt;&lt;/output&gt;
+        &lt;progress value="70" max="100"&gt;&lt;/progress&gt;
+        &lt;meter value="0.6"&gt;60%&lt;/meter&gt;
+    &lt;/fieldset&gt;
+&lt;/form&gt;
+&lt;label&gt;标签&lt;/label&gt;
+&lt;legend&gt;分组标题&lt;/legend&gt;
+&lt;fieldset&gt;分组容器&lt;/fieldset&gt;
+&lt;optgroup label="一组选项"&gt;
+    &lt;option value="1"&gt;选项1&lt;/option&gt;
+&lt;/optgroup&gt;
+
+&lt;!-- 语义与辅助 --&gt;
+&lt;details&gt;
+    &lt;summary&gt;展开/收起标题&lt;/summary&gt;
+    &lt;p&gt;详细内容&lt;/p&gt;
+&lt;/details&gt;
+&lt;dialog open&gt;对话框内容&lt;/dialog&gt;
+&lt;summary&gt;细节标题&lt;/summary&gt;
+&lt;template&gt;
+    &lt;p&gt;模板内容，不在页面显示&lt;/p&gt;
+&lt;/template&gt;
+&lt;slot&gt;插槽内容&lt;/slot&gt; &lt;!-- web components用 --&gt;
+&lt;shadow&gt;影子DOM（已废弃）&lt;/shadow&gt;
+
+&lt;!-- 脚本与样式 --&gt;
+&lt;script&gt;alert('Hello!');&lt;/script&gt;
+&lt;script src="main.js"&gt;&lt;/script&gt;
+&lt;noscript&gt;不支持JS时显示的内容&lt;/noscript&gt;
+&lt;style&gt;
+    body { color: #333; }
+&lt;/style&gt;
+&lt;link rel="stylesheet" href="style.css"&gt;
+&lt;base href="https://example.com/"&gt;
+
+&lt;!-- 其他常用标签 --&gt;
+&lt;s&gt;表示不再相关的内容&lt;/s&gt;
+&lt;sup&gt;上标&lt;/sup&gt;
+&lt;sub&gt;下标&lt;/sub&gt;
+&lt;mark&gt;高亮&lt;/mark&gt;
+&lt;ruby&gt;注音&lt;rt&gt;zhù yīn&lt;/rt&gt;&lt;/ruby&gt;
+&lt;rp&gt;(注音括号，兼容用)&lt;/rp&gt;
+&lt;bdi&gt;双向隔离&lt;/bdi&gt;
+&lt;bdo dir="rtl"&gt;方向覆盖&lt;/bdo&gt;</code></pre>
+                    </details>
+                      </div>
+
+                    <div class="guide-section">
+                      <details>
+                        <summary>🎨 CSS样式</summary>
+                        <p>CSS用于控制网页的外观和布局。</p>
+                        <pre><code>&lt;style&gt;
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+h1 {
+    color: #333;
+    text-align: center;
+}
+&lt;/style&gt;</code></pre>
+                    </details>
+                </div>
+                  
+                    <div class="guide-section">
+                      <details>
+                        <summary>🦄 CSS属性值</summary>
+                        <p>CSS属性示例</p>
+                        <pre><code>/* 布局与盒模型 */
+display: 定义元素的显示类型 /* display: flex; */
+position: 设置定位方式 /* position: absolute; */
+top: 顶部偏移量 /* top: 10px; */
+right: 右侧偏移量 /* right: 20px; */
+bottom: 底部偏移量 /* bottom: 0; */
+left: 左侧偏移量 /* left: 0; */
+z-index: 层叠顺序 /* z-index: 100; */
+float: 浮动方式 /* float: right; */
+clear: 清除浮动影响 /* clear: both; */
+width: 宽度 /* width: 200px; */
+min-width: 最小宽度 /* min-width: 100px; */
+max-width: 最大宽度 /* max-width: 400px; */
+height: 高度 /* height: 150px; */
+min-height: 最小高度 /* min-height: 50px; */
+max-height: 最大高度 /* max-height: 300px; */
+margin: 外边距 /* margin: 10px 20px; */
+padding: 内边距 /* padding: 8px 16px; */
+box-sizing: 盒模型计算方式 /* box-sizing: border-box; */
+overflow: 内容溢出处理 /* overflow: auto; */
+overflow-x: 水平方向溢出处理 /* overflow-x: scroll; */
+overflow-y: 垂直方向溢出处理 /* overflow-y: hidden; */
+gap: 项目间距（格栅/Flex布局） /* gap: 20px; *//* 边框与圆角 */
+border: 边框综合设置 /* border: 1px solid #333; */
+border-width: 边框宽度 /* border-width: 2px; */
+border-style: 边框样式 /* border-style: dashed; */
+border-color: 边框颜色 /* border-color: red; */
+border-radius: 圆角半径 /* border-radius: 10px; */
+outline: 轮廓线 /* outline: 2px solid blue; *//* 背景 */
+background: 背景综合设置 /* background: #fff url(bg.jpg) no-repeat center; */
+background-color: 背景色 /* background-color: #f8f8f8; */
+background-image: 背景图片 /* background-image: url(bg.png); */
+background-size: 背景尺寸 /* background-size: cover; */
+background-repeat: 背景是否重复 /* background-repeat: no-repeat; */
+background-position: 背景位置 /* background-position: right top; */
+background-attachment: 背景滚动行为 /* background-attachment: fixed; *//* 字体与文本 */
+color: 字体颜色 /* color: #222; */
+font-size: 字体大小 /* font-size: 18px; */
+font-family: 字体系列 /* font-family: Arial, sans-serif; */
+font-weight: 字体粗细 /* font-weight: bold; */
+font-style: 字体样式（斜体等） /* font-style: italic; */
+text-align: 文字水平对齐方式 /* text-align: center; */
+text-decoration: 文字装饰线 /* text-decoration: underline; */
+line-height: 行高 /* line-height: 1.8; */
+letter-spacing: 字符间距 /* letter-spacing: 2px; */
+word-spacing: 单词间距 /* word-spacing: 8px; */
+text-transform: 大小写转换 /* text-transform: uppercase; */
+text-shadow: 文字阴影 /* text-shadow: 1px 1px 3px #999; */
+white-space: 空白符处理方式 /* white-space: nowrap; */
+direction: 文字方向 /* direction: rtl; *//* Flex布局 */
+flex-direction: 主轴方向 /* flex-direction: column; */
+flex-wrap: 是否换行 /* flex-wrap: wrap; */
+flex-flow: 方向与换行 /* flex-flow: row wrap; */
+justify-content: 主轴对齐方式 /* justify-content: space-between; */
+align-items: 侧轴对齐方式 /* align-items: center; */
+align-content: 多行侧轴对齐 /* align-content: stretch; */
+order: 排序顺序 /* order: 2; */
+flex-grow: 放大比例 /* flex-grow: 1; */
+flex-shrink: 缩小比例 /* flex-shrink: 0; */
+flex-basis: 初始大小 /* flex-basis: 100px; *//* Grid布局 */
+grid-template-columns: 列轨道分布 /* grid-template-columns: 1fr 2fr; */
+grid-template-rows: 行轨道分布 /* grid-template-rows: 100px 200px; */
+grid-column: 元素跨越列数 /* grid-column: 1 / 3; */
+grid-row: 元素跨越行数 /* grid-row: 2 / 4; */
+grid-area: 区域名称或位置 /* grid-area: header; */
+grid-gap: 网格间距 /* grid-gap: 16px; *//* 其他视觉样式 */
+opacity: 不透明度 /* opacity: 0.6; */
+box-shadow: 元素阴影 /* box-shadow: 2px 2px 8px #aaa; */
+cursor: 鼠标形状 /* cursor: pointer; */
+visibility: 可见性 /* visibility: hidden; */
+transition: 过渡动画 /* transition: all 0.3s; */
+transform: 变换（旋转/缩放等） /* transform: scale(1.1); */
+animation: 动画属性 /* animation: fadeIn 1s ease-in; *//* 列表 */
+list-style: 列表样式 /* list-style: square inside; */
+list-style-type: 列表标记类型 /* list-style-type: decimal; */
+list-style-image: 列表自定义图片标记 /* list-style-image: url(icon.png); *//* 表格 */
+border-collapse: 边框合并 /* border-collapse: collapse; */
+border-spacing: 单元格间距 /* border-spacing: 6px; */
+table-layout: 表格布局算法 /* table-layout: fixed; *//* 伪类与伪元素 */
+a:hover { color: red; } /* 鼠标悬停样式 */
+button:active { background: #eee; } /* 按下时样式 */
+.box::before { content: '★'; } /* 元素前插入内容 */
+.box::after { content: '√'; } /* 元素后插入内容 *//* 响应式相关 */
+@media (max-width: 600px) { ... } /* 媒体查询 *//* 其它常用属性 */
+content: 伪元素内容 /* content: "Hello!"; */
+pointer-events: 鼠标事件响应 /* pointer-events: none; */
+user-select: 是否允许选中文本 /* user-select: none; *//* 更多高级/补充属性 */
+backface-visibility: 背面是否可见 /* backface-visibility: hidden; */
+filter: 图像/内容滤镜 /* filter: blur(3px); */
+object-fit: 媒体填充方式 /* object-fit: cover; */
+object-position: 媒体位置 /* object-position: center; */
+resize: 用户是否能调整大小 /* resize: both; */
+scroll-behavior: 滚动行为 /* scroll-behavior: smooth; */
+will-change: 优化提示 /* will-change: transform; */
+touch-action: 触摸行为控制 /* touch-action: none; */
+clip-path: 裁剪路径 /* clip-path: circle(50%); */
+mix-blend-mode: 混合模式 /* mix-blend-mode: multiply; */
+writing-mode: 文字流向 /* writing-mode: vertical-rl; */</code></pre>
+                    </details>
+                </div>
+                  
+                    <div class="guide-section">
+                        <details>
+                        <summary>⚡ JavaScript交互</summary>
+                        <p>JavaScript为网页添加动态行为和交互功能。</p>
+                        <pre><code>&lt;script&gt;
+function showAlert() {
+    alert('Hello, World!');
+}
+&lt;/script&gt;</code></pre>
+                          </details>
+                           <!-- 颜色选择器弹窗 -->
+        <div id="colorPickerModal" class="color-picker-modal" style="display:none;">
+            <div class="color-picker-content">
+                <span class="color-picker-close" id="colorPickerClose">&times;</span>
+                <h3>选择颜色</h3>
+                <input type="color" id="colorInput" value="#4f46e5" style="width:60px;height:40px;">
+                <div class="color-format-row">
+                    <label>HEX：</label>
+                    <input type="text" id="colorHex" value="#4f46e5" readonly style="width:110px;">
+                    <button class="btn btn-primary btn-mini" id="copyHexBtn">复制</button>
+                    <span id="copyHexTip" class="copy-tip">已复制！</span>
+                </div>
+                <div class="color-format-row">
+                    <label>RGB：</label>
+                    <input type="text" id="colorRgb" value="rgb(79,70,229)" readonly style="width:110px;">
+                    <button class="btn btn-primary btn-mini" id="copyRgbBtn">复制</button>
+                    <span id="copyRgbTip" class="copy-tip">已复制！</span>
+                </div>
+                <div class="color-format-row">
+                    <label>HSL：</label>
+                    <input type="text" id="colorHsl" value="hsl(237,76%,59%)" readonly style="width:110px;">
+                    <button class="btn btn-primary btn-mini" id="copyHslBtn">复制</button>
+                    <span id="copyHslTip" class="copy-tip">已复制！</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast 通知 -->
+    <div id="toast" class="toast">
+        <div id="toast-message"></div>
+    </div>
+
+    <!-- 引入CodeMirror相关JS文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/edit/closetag.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/xml-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/dialog/dialog.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/search/searchcursor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/search/search.min.js"></script>
+
+    <script>
+        // 初始化CodeMirror编辑器
+        const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+            mode: 'htmlmixed',
+            lineNumbers: true,
+            theme: 'material',
+            indentUnit: 2,
+            tabSize: 2,
+            lineWrapping: true,
+            autoCloseTags: true,
+            autoCloseBrackets: true,
+            foldGutter: true,
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+            extraKeys: {
+                "Ctrl-Alt-F": function(cm) {
+                    formatCode();
+                }
+            }
+        });
+
+        // 实时预览功能
+        function updatePreview() {
+            const previewFrame = document.getElementById('previewFrame');
+            const code = editor.getValue();
+            
+            // 创建一个新的文档内容
+            const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+            doc.open();
+            doc.write(code);
+            doc.close();
+        }
+
+        // 更新行列信息
+        function updateLineInfo() {
+            const cursor = editor.getCursor();
+            const lineCount = editor.lineCount();
+            document.getElementById('lineCount').textContent = 
+                `行: ${cursor.line + 1} | 列: ${cursor.ch + 1} | 总行数: ${lineCount}`;
+        }
+
+        // 监听编辑器变化
+        editor.on('change', function(cm, change) {
+            updatePreview();
+            updateLineInfo();
+        });
+
+        editor.on('cursorActivity', function(cm) {
+            updateLineInfo();
+        });
+
+        // 初始化
+        updatePreview();
+        updateLineInfo();
+
+        // 显示Toast通知
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const messageEl = document.getElementById('toast-message');
+            
+            messageEl.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 粘贴剪贴板内容
+        async function pasteFromClipboard() {
+            if (navigator.clipboard) {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    const doc = editor.getDoc();
+                    const cursor = doc.getCursor();
+                    doc.replaceRange(text, cursor);
+                    showToast('已粘贴剪贴板内容！');
+                } catch (err) {
+                    showToast('无法读取剪贴板内容');
+                }
+            } else {
+                showToast('当前浏览器不支持Clipboard API');
+            }
+        }
+
+        // 保存文件
+        function saveFile() {
+            const code = editor.getValue();
+            const blob = new Blob([code], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `html-project-${new Date().getTime()}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('文件保存成功！');
+        }
+
+        // 复制代码
+        async function copyCode() {
+            try {
+                const code = editor.getValue();
+                await navigator.clipboard.writeText(code);
+                showToast('代码已复制到剪贴板！');
+            } catch (err) {
+                showToast('复制失败，请手动复制', 'error');
+            }
+        }
+
+        // 导出HTML
+        function exportHTML() {
+            saveFile();
+        }
+
+        // 格式化代码
+        function formatCode() {
+            const code = editor.getValue();
+            // 简单的格式化逻辑
+            const formatted = code
+                .replace(/></g, '>\n<')
+                .replace(/^\s*\n/gm, '')
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map((line, index, arr) => {
+                    let indent = 0;
+                    for (let i = 0; i < index; i++) {
+                        if (arr[i].match(/<(?!\/)[^>]*(?<!\/|br|hr|img|input|meta|link)>$/)) {
+                            indent++;
+                        }
+                        if (arr[i].match(/<\/[^>]+>$/)) {
+                            indent--;
+                        }
+                    }
+                    if (line.match(/^<\/[^>]+>$/)) {
+                        indent--;
+                    }
+                    return '  '.repeat(Math.max(0, indent)) + line;
+                })
+                .join('\n');
+            
+            editor.setValue(formatted);
+            showToast('代码格式化完成！');
+        }
+
+        // 切换主题
+        function changeTheme(theme) {
+            editor.setOption('theme', theme);
+            showToast(`主题已切换为 ${theme}`);
+        }
+
+        // 全屏预览
+        function toggleFullscreen() {
+            const previewPanel = document.querySelector('.preview-panel');
+            const editorPanel = document.querySelector('.editor-panel');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (previewPanel.style.position === 'fixed') {
+                // 退出全屏
+                previewPanel.style.position = '';
+                previewPanel.style.top = '';
+                previewPanel.style.left = '';
+                previewPanel.style.width = '';
+                previewPanel.style.height = '';
+                previewPanel.style.zIndex = '';
+                previewPanel.style.background = '';
+                editorPanel.style.display = '';
+                sidebar.style.display = '';
+            } else {
+                // 进入全屏
+                previewPanel.style.position = 'fixed';
+                previewPanel.style.top = '0';
+                previewPanel.style.left = '0';
+                previewPanel.style.width = '100vw';
+                previewPanel.style.height = '100vh';
+                previewPanel.style.zIndex = '9999';
+                previewPanel.style.background = 'var(--surface)';
+                editorPanel.style.display = 'none';
+                sidebar.style.display = 'none';
+            }
+        }
+
+        // 切换侧边栏标签
+        function switchTab(tabName) {
+            // 移除所有active类
+            document.querySelectorAll('.sidebar-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 隐藏所有内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // 激活当前标签
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+        }
+
+        // 加载模板
+        function loadTemplate(templateName) {
+            if (window.templates && window.templates[templateName]) {
+                editor.setValue(window.templates[templateName]);
+                showToast(`${templateName}模板已加载！`);
+            } else {
+                showToast('模板未找到');
+            }
+        }
+
+        // 窗口调整大小时重新计算编辑器尺寸
+        window.addEventListener('resize', function() {
+            editor.refresh();
+        });
+
+        // 防止意外离开页面时丢失内容
+        window.addEventListener('beforeunload', function(e) {
+            const code = editor.getValue();
+            const defaultCode = document.getElementById('codeEditor').defaultValue;
+            if (code !== defaultCode && code.trim() !== '') {
+                const message = '您有未保存的更改，确定要离开吗？';
+                e.returnValue = message;
+                return message;
+            }
+        });
+
+        // 自动保存功能（可选）
+        let autoSaveTimer;
+        editor.on('change', function() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(function() {
+                // 这里可以实现自动保存到localStorage的逻辑
+                // 但由于artifacts限制，我们只显示提示
+                console.log('自动保存触发');
+            }, 30000); // 30秒后自动保存
+        });
+        // 上一步、下一步、清空代码功能
+        document.getElementById('undoBtn').addEventListener('click', function() {
+            editor.undo();
+        });
+        document.getElementById('redoBtn').addEventListener('click', function() {
+            editor.redo();
+        });
+        
+        // 清空代码功能
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            if (confirm('确定要清空当前代码吗？')) {
+                editor.setValue('');
+                showToast('代码已清空！');
+            }
+        });
+
+        // 标签插入功能
+        document.querySelectorAll('.tag-insert-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var tag = btn.getAttribute('data-tag');
+                var doc = editor.getDoc();
+                var sel = doc.getSelection();
+                if (sel) {
+                    doc.replaceSelection(tag);
+                } else {
+                    var cursor = doc.getCursor();
+                    doc.replaceRange(tag, cursor);
+                }
+                showToast('标签已插入！');
+            });
+        });
+
+        // 导入文件功能
+        document.getElementById('importBtn').addEventListener('click', function() {
+            document.getElementById('importFile').click();
+        });
+        document.getElementById('importFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                if (evt.target.readyState === FileReader.DONE) {
+                    editor.setValue(evt.target.result);
+                    showToast('文件已导入！');
+                }
+            };
+            reader.readAsText(file, 'utf-8');
+            // 清空value以便连续导入同一文件
+            e.target.value = '';
+        });
+
+        // 双击预览区退出全屏
+        document.querySelector('.preview-panel').addEventListener('dblclick', function() {
+            const previewPanel = document.querySelector('.preview-panel');
+            if (previewPanel.style.position === 'fixed') {
+                toggleFullscreen();
+            }
+        });
+    // 颜色选择器弹窗逻辑
+    function hexToRgb(hex) {
+        hex = hex.replace('#', '');
+        if (hex.length === 3) {
+            hex = hex.split('').map(x => x + x).join('');
+        }
+        const bigint = parseInt(hex, 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return [r, g, b];
+    }
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        let max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+        if (max === min) {
+            h = s = 0;
+        } else {
+            let d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    }
+    function updateColorFormats(hex) {
+        document.getElementById('colorHex').value = hex;
+        const [r, g, b] = hexToRgb(hex);
+        document.getElementById('colorRgb').value = `rgb(${r},${g},${b})`;
+        const [h, s, l] = rgbToHsl(r, g, b);
+        document.getElementById('colorHsl').value = `hsl(${h},${s}%,${l}%)`;
+    }
+    document.getElementById('colorPickerBtn').addEventListener('click', function() {
+        document.getElementById('colorPickerModal').style.display = 'flex';
+        updateColorFormats(document.getElementById('colorInput').value);
+        hideAllCopyTips();
+    });
+    document.getElementById('colorPickerClose').addEventListener('click', function() {
+        document.getElementById('colorPickerModal').style.display = 'none';
+        hideAllCopyTips();
+    });
+    document.getElementById('colorInput').addEventListener('input', function(e) {
+        updateColorFormats(e.target.value);
+        hideAllCopyTips();
+    });
+    function hideAllCopyTips() {
+        document.getElementById('copyHexTip').style.display = 'none';
+        document.getElementById('copyRgbTip').style.display = 'none';
+        document.getElementById('copyHslTip').style.display = 'none';
+    }
+    document.getElementById('copyHexBtn').addEventListener('click', function() {
+        const val = document.getElementById('colorHex').value;
+        navigator.clipboard.writeText(val).then(function() {
+            hideAllCopyTips();
+            document.getElementById('copyHexTip').style.display = 'inline';
+        });
+    });
+    document.getElementById('copyRgbBtn').addEventListener('click', function() {
+        const val = document.getElementById('colorRgb').value;
+        navigator.clipboard.writeText(val).then(function() {
+            hideAllCopyTips();
+            document.getElementById('copyRgbTip').style.display = 'inline';
+        });
+    });
+    document.getElementById('copyHslBtn').addEventListener('click', function() {
+        const val = document.getElementById('colorHsl').value;
+        navigator.clipboard.writeText(val).then(function() {
+            hideAllCopyTips();
+            document.getElementById('copyHslTip').style.display = 'inline';
+        });
+    });
+    document.getElementById('colorPickerModal').addEventListener('click', function(e) {
+        if(e.target === this) {
+            this.style.display = 'none';
+            hideAllCopyTips();
+        }
+    });
+    </script>
+</body>
+</html>
