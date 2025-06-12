@@ -2288,7 +2288,7 @@ fetchData();
             
             // 根据滚动位置改变页眉透明度
             const opacity = Math.min(scrollTop / 200, 0.95);
-            header.style.background = `rgba(255, 255, 255, ${opacity * 0.1})`;
+            header.style.background = ``;
             
             lastScrollTop = scrollTop;
         });
@@ -2348,7 +2348,7 @@ fetchData();
             }
             
             const opacity = Math.min(scrollTop / 200, 0.95);
-            header.style.background = `rgba(255, 255, 255, ${opacity * 0.1})`;
+            header.style.background = ``;
             
             lastScrollTop = scrollTop;
         });
