@@ -1895,9 +1895,576 @@ fetchData();
         </div>
     </footer>
 </body>
+</html>`,
+
+           个人作品集: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客文章 - 我的博客</title>
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --text-color: #333;
+            --light-text: #777;
+            --border-color: rgba(255,255,255,0.2);
+            --bg-color: #f0f2f5;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+        }
+        
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            background-image: url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+        }
+        
+        /* 导航栏样式 */
+        .navbar {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+        
+        /* 页眉样式 */
+        .header {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+            color: white;
+            padding: 100px 20px 60px;
+            text-align: center;
+            margin-bottom: 40px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+        
+        /* 主内容布局 */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 40px;
+            padding: 0 20px;
+        }
+        
+        /* 文章容器 - 毛玻璃效果 */
+        .article-container {
+            flex: 1;
+            background: var(--glass-bg);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+        }
+        
+        .article {
+            padding: 40px;
+        }
+        
+        .article h1 {
+            color: var(--text-color);
+            margin-top: 0;
+        }
+        
+        .article h2 {
+            color: var(--text-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        
+        .article h3 {
+            color: var(--text-color);
+            margin-top: 30px;
+        }
+        
+        .article p {
+            color: var(--light-text);
+            margin-bottom: 20px;
+        }
+        
+        .article ul, .article ol {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+        
+        .meta {
+            color: var(--light-text);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        /* 侧边栏目录 - 桌面样式 */
+        .sidebar {
+            width: 300px;
+            position: sticky;
+            top: 90px;
+            height: fit-content;
+            align-self: flex-start;
+        }
+        
+        .toc {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .toc-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0 0 20px 0;
+            color: var(--primary-color);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .toc-title::before {
+            content: "📑";
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+        
+        .toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .toc-list li {
+            margin-bottom: 10px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .toc-list li:hover {
+            transform: translateX(5px);
+        }
+        
+        .toc-list a {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: block;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        
+        .toc-list a:hover {
+            color: white;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .toc-list .level-2 {
+            padding-left: 20px;
+        }
+        
+        .toc-list .level-3 {
+            padding-left: 35px;
+        }
+        
+        /* 悬浮球样式 - 移动端 */
+        .toc-floating {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            z-index: 998;
+            font-size: 1.5rem;
+        }
+        
+        .toc-floating::before {
+            content: "📑";
+        }
+        
+        .toc-popup {
+            display: none;
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 280px;
+            max-height: 70vh;
+            overflow-y: auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            z-index: 997;
+        }
+        
+        .toc-popup.active {
+            display: block;
+        }
+        
+        /* 返回顶部按钮 */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .back-to-top::after {
+            content: "↑";
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        /* 页脚样式 */
+        .footer {
+            background: rgba(51, 51, 51, 0.8);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 60px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1080px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .toc-floating {
+                display: flex;
+            }
+            
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .article-container {
+                margin-bottom: 0;
+            }
+            
+            .back-to-top {
+                bottom: 100px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                height: auto;
+                padding: 15px 0;
+            }
+            
+            .nav-links {
+                margin-top: 15px;
+                gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .header {
+                padding: 80px 20px 40px;
+            }
+            
+            .meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .toc-floating {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+                bottom: 20px;
+                right: 20px;
+            }
+            
+            .toc-popup {
+                width: calc(100% - 40px);
+                right: 20px;
+                bottom: 80px;
+            }
+            
+            .back-to-top {
+                width: 40px;
+                height: 40px;
+                bottom: 90px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">技术博客</a>
+            <div class="nav-links">
+                <a href="#">首页</a>
+                <a href="#">文章</a>
+                <a href="#">分类</a>
+                <a href="#">关于</a>
+                <a href="#">联系</a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- 页眉 -->
+    <div class="header">
+        <h1>我的技术博客</h1>
+        <p>分享编程经验与技术见解</p>
+    </div>
+    
+    <!-- 主内容区 -->
+    <div class="main-container">
+        <!-- 文章内容 -->
+        <div class="article-container">
+            <article class="article">
+                <h1>如何构建现代化的网页</h1>
+                <div class="meta">
+                    <span>发布时间: 2024年1月1日</span>
+                    <span>作者: 开发者</span>
+                    <span>分类: Web开发</span>
+                </div>
+                
+                <h2 id="preface">前言</h2>
+                <p>在现代Web开发中，构建一个优秀的网页需要考虑多个方面：用户体验、性能优化、响应式设计等。本文将介绍一些最佳实践。</p>
+                
+                <h2 id="design-principles">设计原则</h2>
+                <p>优秀的网页设计应该遵循以下原则：</p>
+                <ul>
+                    <li>简洁明了的布局</li>
+                    <li>一致的视觉风格</li>
+                    <li>良好的可访问性</li>
+                    <li>快速的加载速度</li>
+                </ul>
+                
+                <h3 id="user-experience">用户体验</h3>
+                <p>良好的用户体验是现代化网页的核心。我们需要考虑用户的使用习惯、浏览设备的多样性以及无障碍访问需求。</p>
+                
+                <h2 id="technical-implementation">技术实现</h2>
+                <p>使用HTML5、CSS3和现代JavaScript框架可以帮助我们构建更好的用户体验。同时，响应式设计确保网页在各种设备上都能正常显示。</p>
+                
+                <h3 id="responsive-design">响应式设计</h3>
+                <p>通过媒体查询和弹性布局，我们可以创建适应不同屏幕尺寸的网页。这包括移动设备、平板电脑和桌面电脑。</p>
+                
+                <h3 id="performance">性能优化</h3>
+                <p>优化图片、使用CDN、代码拆分和懒加载等技术可以显著提高网页加载速度，改善用户体验。</p>
+                
+                <h2 id="conclusion">总结</h2>
+                <p>构建现代化网页是一个持续学习和改进的过程。通过不断实践和学习新技术，我们可以创造出更优秀的Web体验。</p>
+            </article>
+        </div>
+        
+        <!-- 侧边栏目录 - 桌面版 -->
+        <aside class="sidebar">
+            <div class="toc">
+                <h3 class="toc-title">文章目录</h3>
+                <ul class="toc-list">
+                    <li><a href="#preface">前言</a></li>
+                    <li>
+                        <a href="#design-principles">设计原则</a>
+                        <ul class="toc-list">
+                            <li class="level-2"><a href="#user-experience">用户体验</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#technical-implementation">技术实现</a>
+                        <ul class="toc-list">
+                            <li class="level-2"><a href="#responsive-design">响应式设计</a></li>
+                            <li class="level-2"><a href="#performance">性能优化</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#conclusion">总结</a></li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+    
+    <!-- 侧边栏目录 - 移动悬浮球版 -->
+    <div class="toc-floating" id="tocFloating"></div>
+    <div class="toc-popup" id="tocPopup">
+        <h3 class="toc-title">文章目录</h3>
+        <ul class="toc-list">
+            <li><a href="#preface">前言</a></li>
+            <li>
+                <a href="#design-principles">设计原则</a>
+                <ul class="toc-list">
+                    <li class="level-2"><a href="#user-experience">用户体验</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#technical-implementation">技术实现</a>
+                <ul class="toc-list">
+                    <li class="level-2"><a href="#responsive-design">响应式设计</a></li>
+                    <li class="level-2"><a href="#performance">性能优化</a></li>
+                </ul>
+            </li>
+            <li><a href="#conclusion">总结</a></li>
+        </ul>
+    </div>
+    
+    <!-- 返回顶部按钮 -->
+    <div class="back-to-top" id="backToTop"></div>
+    
+    <!-- 页脚 -->
+    <div class="footer">
+        <p>&copy; 2024 我的博客. 保留所有权利.</p>
+    </div>
+
+    <script>
+        // 返回顶部按钮功能
+        const backToTopButton = document.getElementById('backToTop');
+        
+        // 当用户滚动页面时显示/隐藏按钮
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('visible');
+            } else {
+                backToTopButton.classList.remove('visible');
+            }
+        });
+        
+        // 点击按钮返回顶部
+        backToTopButton.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // TOC悬浮球功能
+        const tocFloating = document.getElementById('tocFloating');
+        const tocPopup = document.getElementById('tocPopup');
+        
+        // 点击悬浮球显示/隐藏目录
+        tocFloating.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tocPopup.classList.toggle('active');
+        });
+        
+        // 点击页面其他区域隐藏目录
+        document.addEventListener('click', () => {
+            tocPopup.classList.remove('active');
+        });
+        
+        // 阻止目录内容点击事件冒泡
+        tocPopup.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        // 点击目录链接后隐藏目录
+        const tocLinks = tocPopup.querySelectorAll('a');
+        tocLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                tocPopup.classList.remove('active');
+            });
+        });
+    </script>
+</body>
 </html>`
 };
 
+//个人作品集: ``
 // 自动渲染模板选择区
 (function() {
     function getTitleAndDesc(key, value) {
