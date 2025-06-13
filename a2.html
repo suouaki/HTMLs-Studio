@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>增强版HTML编辑器与预览</title>
+    <!-- 引入CodeMirror CSS -->
+    <script src="a0.js"></script>
+<script src="sidebar-shortcuts.js"></script>
+    <link rel="icon" type="image/png" href="http://momo-1-img.ao1160301aila.workers.dev/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/material.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/dialog/dialog.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #6366f1;
+            --accent-color: #8b5cf6;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border: #475569;
+            --border-light: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--background) 0%, #1e293b 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--surface-light);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+            transform: translateY(-1px);
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+        }
+
+        .btn-icon:hover {
+            background: var(--surface-light);
+            color: var(--text-primary);
+        }
+
+        .theme-selector {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            background: var(--surface-light);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 5rem);
+            gap: 0.5rem;
+            padding: 0.5rem;
+        }
+
+        .editor-panel, .preview-panel {
+            flex: 1;
+            background: var(--surface);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .panel-header {
+            background: var(--surface-light);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .CodeMirror {
+            height: calc(100% - 3rem) !important;
+            font-size: 14px;
+            font-family: 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+            line-height: 1.5;
+        }
+
+        .preview-frame {
+            width: 100%;
+            height: calc(100% - 3rem);
+            border: none;
+            background: white;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            background: var(--surface-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .sidebar-tab.active {
+            background: var(--surface);
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .sidebar-tab:hover:not(.active) {
+            background: var(--border);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .guide-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .guide-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .guide-section pre {
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            margin: 0.75rem 0;
+        }
+
+        .guide-section code {
+            background: var(--background);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .shortcuts-grid {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: var(--background);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+
+        .shortcut-key {
+            background: var(--surface-light);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+        }
+
+        .templates-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .template-item {
+            padding: 1rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .template-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .template-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .template-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .toast {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 40%;
+            }
+            
+            .app-header {
+                padding: 1rem;
+            }
+            
+            .toolbar {
+                gap: 0.25rem;
+            }
+            
+            .btn {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-light);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <h1 class="app-title">🚀 HTML Studio</h1>
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="pasteFromClipboard()">
+                📋 粘贴
+            </button>
+            <button class="btn btn-secondary" onclick="copyCode()">
+                📋 复制
+            </button>
+            <button class="btn btn-secondary" id="clearBtn" title="清空代码">
+                🗑️ 清空代码
+            </button>
+            <button class="btn btn-secondary" id="importBtn">
+                📥 导入文件
+            </button>
+            <button class="btn btn-secondary" onclick="exportHTML()">
+                📤 导出
+            </button>
+            <button class="btn btn-secondary" id="undoBtn" title="上一步 (Ctrl+Z)">
+                ⬅️ 上一步
+            </button>
+            <button class="btn btn-secondary" id="redoBtn" title="下一步 (Ctrl+Y)">
+                ➡️ 下一步
+            </button>
+            <input type="file" id="importFile" accept=".html,.htm,.txt" style="display:none">
+            <button class="btn btn-icon" onclick="toggleFullscreen()" title="全屏预览">
+                🔍
+            </button>
+            <!-- 新增颜色选择器按钮 -->
+            <button class="btn btn-secondary" id="colorPickerBtn" title="选择颜色">
+                🎨 颜色选择
+            </button>
+            <select class="theme-selector" onchange="changeTheme(this.value)">
+                <option value="material">Material Dark</option>
+                <option value="monokai">Monokai</option>
+                <option value="default">Default</option>
+            </select>
+        </div>
+       
+    </div>
+
+    <div class="main-container">
+        <div class="editor-panel">
+            <div class="panel-header">
+                <span>📝 HTML 编辑器</span>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span id="lineCount">行: 1 | 列: 1</span>
+                </div>
+            </div>
+            <textarea id="codeEditor"></textarea>
+        </div>
+
+        <div class="preview-panel">
+            <div class="panel-header">
+                <span>👁️ 实时预览</span>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>实时同步</span>
+                </div>
+            </div>
+            <iframe class="preview-frame" id="previewFrame"></iframe>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-tabs">
+                <div class="sidebar-tab active" onclick="switchTab('shortcuts')">快捷键</div>
+                <div class="sidebar-tab" onclick="switchTab('templates')">模板</div>
+                <div class="sidebar-tab" onclick="switchTab('guide')">指南</div>
+            </div>
+            
+            <div class="sidebar-content">
+                <div id="shortcuts-tab" class="tab-content"></div>
+                <script src="sidebar-shortcuts.js"></script>
+
+                <div id="templates-tab" class="tab-content hidden">
+                    <div class="guide-section">
+                        <h3>📄 HTML模板</h3>
+                        <div class="templates-grid" id="templates-grid"></div>
+                    </div>
+                </div>
+
+                <div id="guide-tab" class="tab-content hidden">
+                    <div class="guide-section">                      
+                       <details>
+                          <summary>📚 HTML基础</summary>
+                        <p>HTML是网页的骨架，定义了内容的结构和语义。</p>
+                        <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="zh-CN"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;页面标题&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;主标题&lt;/h1&gt;
+    &lt;p&gt;段落内容&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+                          </details>
+                           <!-- 颜色选择器弹窗 -->
+        <div id="colorPickerModal" class="color-picker-modal" style="display:none;">
+            <div class="color-picker-content">
+                <span class="color-picker-close" id="colorPickerClose">&times;</span>
+                <h3>选择颜色</h3>
+                <input type="color" id="colorInput" value="#4f46e5" style="width:60px;height:40px;">
+                <div class="color-format-row">
+                    <label>HEX：</label>
+                    <input type="text" id="colorHex" value="#4f46e5" readonly style="width:110px;">
+                    <button class="btn btn-primary btn-mini" id="copyHexBtn">复制</button>
+                    <span id="copyHexTip" class="copy-tip">已复制！</span>
+                </div>
+                <div class="color-format-row">
+                    <label>RGB：</label>
+                    <input type="text" id="colorRgb" value="rgb(79,70,229)" readonly style="width:110px;">
+                    <button class="btn btn-primary btn-mini" id="copyRgbBtn">复制</button>
+                    <span id="copyRgbTip" class="copy-tip">已复制！</span>
+                </div>
+                <div class="color-format-row">
+                    <label>HSL：</label>
+                    <input type="text" id="colorHsl" value="hsl(237,76%,59%)" readonly style="width:110px;">
+                    <button class="btn btn-primary btn-mini" id="copyHslBtn">复制</button>
+                    <span id="copyHslTip" class="copy-tip">已复制！</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast 通知 -->
+    <div id="toast" class="toast">
+        <div id="toast-message"></div>
+    </div>
+
+    <!-- 引入CodeMirror相关JS文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/edit/closetag.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/xml-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/dialog/dialog.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/search/searchcursor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/search/search.min.js"></script>
+
+    <script>
+        // 初始化CodeMirror编辑器
+        const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+            mode: 'htmlmixed',
+            lineNumbers: true,
+            theme: 'material',
+            indentUnit: 2,
+            tabSize: 2,
+            lineWrapping: true,
+            autoCloseTags: true,
+            autoCloseBrackets: true,
+            foldGutter: true,
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+            extraKeys: {
+                "Ctrl-Alt-F": function(cm) {
+                    formatCode();
+                }
+            }
+        });
+
+        // 实时预览功能
+        function updatePreview() {
+            const previewFrame = document.getElementById('previewFrame');
+            const code = editor.getValue();
+            
+            // 创建一个新的文档内容
+            const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+            doc.open();
+            doc.write(code);
+            doc.close();
+        }
+
+        // 更新行列信息
+        function updateLineInfo() {
+            const cursor = editor.getCursor();
+            const lineCount = editor.lineCount();
+            document.getElementById('lineCount').textContent = 
+                `行: ${cursor.line + 1} | 列: ${cursor.ch + 1} | 总行数: ${lineCount}`;
+        }
+
+        // 监听编辑器变化
+        editor.on('change', function(cm, change) {
+            updatePreview();
+            updateLineInfo();
+        });
+
+        editor.on('cursorActivity', function(cm) {
+            updateLineInfo();
+        });
+
+        // 初始化
+        updatePreview();
+        updateLineInfo();
+
+        // 显示Toast通知
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const messageEl = document.getElementById('toast-message');
+            
+            messageEl.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 粘贴剪贴板内容
+        async function pasteFromClipboard() {
+            if (navigator.clipboard) {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    const doc = editor.getDoc();
+                    const cursor = doc.getCursor();
+                    doc.replaceRange(text, cursor);
+                    showToast('已粘贴剪贴板内容！');
+                } catch (err) {
+                    showToast('无法读取剪贴板内容');
+                }
+            } else {
+                showToast('当前浏览器不支持Clipboard API');
+            }
+        }
+
+        // 保存文件
+        function saveFile() {
+            const code = editor.getValue();
+            const blob = new Blob([code], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `html-project-${new Date().getTime()}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('文件保存成功！');
+        }
+
+        // 复制代码
+        async function copyCode() {
+            try {
+                const code = editor.getValue();
+                await navigator.clipboard.writeText(code);
+                showToast('代码已复制到剪贴板！');
+            } catch (err) {
+                showToast('复制失败，请手动复制', 'error');
+            }
+        }
+
+        // 导出HTML
+        function exportHTML() {
+            saveFile();
+        }
+
+        // 格式化代码
+        function formatCode() {
+            const code = editor.getValue();
+            // 简单的格式化逻辑
+            const formatted = code
+                .replace(/></g, '>\n<')
+                .replace(/^\s*\n/gm, '')
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map((line, index, arr) => {
+                    let indent = 0;
+                    for (let i = 0; i < index; i++) {
+                        if (arr[i].match(/<(?!\/)[^>]*(?<!\/|br|hr|img|input|meta|link)>$/)) {
+                            indent++;
+                        }
+                        if (arr[i].match(/<\/[^>]+>$/)) {
+                            indent--;
+                        }
+                    }
+                    if (line.match(/^<\/[^>]+>$/)) {
+                        indent--;
+                    }
+                    return '  '.repeat(Math.max(0, indent)) + line;
+                })
+                .join('\n');
+            
+            editor.setValue(formatted);
+            showToast('代码格式化完成！');
+        }
+
+        // 切换主题
+        function changeTheme(theme) {
+            editor.setOption('theme', theme);
+            showToast(`主题已切换为 ${theme}`);
+        }
+
+        // 全屏预览
+        function toggleFullscreen() {
+            const previewPanel = document.querySelector('.preview-panel');
+            const editorPanel = document.querySelector('.editor-panel');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (previewPanel.style.position === 'fixed') {
+                // 退出全屏
+                previewPanel.style.position = '';
+                previewPanel.style.top = '';
+                previewPanel.style.left = '';
+                previewPanel.style.width = '';
+                previewPanel.style.height = '';
+                previewPanel.style.zIndex = '';
+                previewPanel.style.background = '';
+                editorPanel.style.display = '';
+                sidebar.style.display = '';
+            } else {
+                // 进入全屏
+                previewPanel.style.position = 'fixed';
+                previewPanel.style.top = '0';
+                previewPanel.style.left = '0';
+                previewPanel.style.width = '100vw';
+                previewPanel.style.height = '100vh';
+                previewPanel.style.zIndex = '9999';
+                previewPanel.style.background = 'var(--surface)';
+                editorPanel.style.display = 'none';
+                sidebar.style.display = 'none';
+            }
+        }
+
+        // 切换侧边栏标签
+        function switchTab(tabName) {
+            // 移除所有active类
+            document.querySelectorAll('.sidebar-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 隐藏所有内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // 激活当前标签
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+        }
+
+        // 加载模板
+        function loadTemplate(templateName) {
+            if (window.templates && window.templates[templateName]) {
+                editor.setValue(window.templates[templateName]);
+                showToast(`${templateName}模板已加载！`);
+            } else {
+                showToast('模板未找到');
+            }
+        }
+
+        // 窗口调整大小时重新计算编辑器尺寸
+        window.addEventListener('resize', function() {
+            editor.refresh();
+        });
+
+        // 防止意外离开页面时丢失内容
+        window.addEventListener('beforeunload', function(e) {
+            const code = editor.getValue();
+            const defaultCode = document.getElementById('codeEditor').defaultValue;
+            if (code !== defaultCode && code.trim() !== '') {
+                const message = '您有未保存的更改，确定要离开吗？';
+                e.returnValue = message;
+                return message;
+            }
+        });
+
+        // 自动保存功能（可选）
+        let autoSaveTimer;
+        editor.on('change', function() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(function() {
+                // 这里可以实现自动保存到localStorage的逻辑
+                // 但由于artifacts限制，我们只显示提示
+                console.log('自动保存触发');
+            }, 30000); // 30秒后自动保存
+        });
+        // 上一步、下一步、清空代码功能
+        document.getElementById('undoBtn').addEventListener('click', function() {
+            editor.undo();
+        });
+        document.getElementById('redoBtn').addEventListener('click', function() {
+            editor.redo();
+        });
+        
+        // 清空代码功能
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            if (confirm('确定要清空当前代码吗？')) {
+                editor.setValue('');
+                showToast('代码已清空！');
+            }
+        });
+
+        // 标签插入功能
+        document.querySelectorAll('.tag-insert-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var tag = btn.getAttribute('data-tag');
+                var doc = editor.getDoc();
+                var sel = doc.getSelection();
+                if (sel) {
+                    doc.replaceSelection(tag);
+                } else {
+                    var cursor = doc.getCursor();
+                    doc.replaceRange(tag, cursor);
+                }
+                showToast('标签已插入！');
+            });
+        });
+
+        // 导入文件功能
+        document.getElementById('importBtn').addEventListener('click', function() {
+            document.getElementById('importFile').click();
+        });
+        document.getElementById('importFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                if (evt.target.readyState === FileReader.DONE) {
+                    editor.setValue(evt.target.result);
+                    showToast('文件已导入！');
+                }
+            };
+            reader.readAsText(file, 'utf-8');
+            // 清空value以便连续导入同一文件
+            e.target.value = '';
+        });
+
+        // 双击预览区退出全屏
+        document.querySelector('.preview-panel').addEventListener('dblclick', function() {
+            const previewPanel = document.querySelector('.preview-panel');
+            if (previewPanel.style.position === 'fixed') {
+                toggleFullscreen();
+            }
+        });
+    // 颜色选择器弹窗逻辑
+    function hexToRgb(hex) {
+        hex = hex.replace('#', '');
+        if (hex.length === 3) {
+            hex = hex.split('').map(x => x + x).join('');
+        }
+        const bigint = parseInt(hex, 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return [r, g, b];
+    }
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        let max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+        if (max === min) {
+            h = s = 0;
+        } else {
+            let d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    }
+    function updateColorFormats(hex) {
+        document.getElementById('colorHex').value = hex;
+        const [r, g, b] = hexToRgb(hex);
+        document.getElementById('colorRgb').value = `rgb(${r},${g},${b})`;
+        const [h, s, l] = rgbToHsl(r, g, b);
+        document.getElementById('colorHsl').value = `hsl(${h},${s}%,${l}%)`;
+    }
+    document.getElementById('colorPickerBtn').addEventListener('click', function() {
+        document.getElementById('colorPickerModal').style.display = 'flex';
+        updateColorFormats(document.getElementById('colorInput').value);
+        hideAllCopyTips();
+    });
+    document.getElementById('colorPickerClose').addEventListener('click', function() {
+        document.getElementById('colorPickerModal').style.display = 'none';
+        hideAllCopyTips();
+    });
+    document.getElementById('colorInput').addEventListener('input', function(e) {
+        updateColorFormats(e.target.value);
+        hideAllCopyTips();
+    });
+    function hideAllCopyTips() {
+        document.getElementById('copyHexTip').style.display = 'none';
+        document.getElementById('copyRgbTip').style.display = 'none';
+        document.getElementById('copyHslTip').style.display = 'none';
+    }
+    document.getElementById('copyHexBtn').addEventListener('click', function() {
+        const val = document.getElementById('colorHex').value;
+        navigator.clipboard.writeText(val).then(function() {
+            hideAllCopyTips();
+            document.getElementById('copyHexTip').style.display = 'inline';
+        });
+    });
+    document.getElementById('copyRgbBtn').addEventListener('click', function() {
+        const val = document.getElementById('colorRgb').value;
+        navigator.clipboard.writeText(val).then(function() {
+            hideAllCopyTips();
+            document.getElementById('copyRgbTip').style.display = 'inline';
+        });
+    });
+    document.getElementById('copyHslBtn').addEventListener('click', function() {
+        const val = document.getElementById('colorHsl').value;
+        navigator.clipboard.writeText(val).then(function() {
+            hideAllCopyTips();
+            document.getElementById('copyHslTip').style.display = 'inline';
+        });
+    });
+    document.getElementById('colorPickerModal').addEventListener('click', function(e) {
+        if(e.target === this) {
+            this.style.display = 'none';
+            hideAllCopyTips();
+        }
+    });
+    </script>
+</body>
+</html>
