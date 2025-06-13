@@ -1897,7 +1897,7 @@ fetchData();
 </body>
 </html>`,
 
-           个人作品集: `<!DOCTYPE html>
+           博客文章模板: `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
