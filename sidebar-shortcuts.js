@@ -56,7 +56,32 @@ function renderSidebarShortcuts() {
   renderBtns(sidebarShortcutsData.tags, 'insert-tags-grid-tags');
   renderBtns(sidebarShortcutsData.css, 'insert-tags-grid-css');
   renderBtns(sidebarShortcutsData.selectors, 'insert-tags-grid-selectors');
+
+  // 渲染后绑定插入事件
+  bindTagInsertEvents();
 }
+
+function bindTagInsertEvents() {
+  // 兼容CodeMirror全局变量editor
+  if (typeof window.editor === 'undefined' || !window.editor) return;
+  document.querySelectorAll('.tag-insert-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tag = btn.getAttribute('data-tag');
+      var doc = window.editor.getDoc();
+      var sel = doc.getSelection();
+      if (sel) {
+        doc.replaceSelection(tag);
+      } else {
+        var cursor = doc.getCursor();
+        doc.replaceRange(tag, cursor);
+      }
+      if (typeof window.showToast === 'function') {
+        window.showToast('标签已插入！');
+      }
+    });
+  });
+}
+
 
 document.addEventListener('DOMContentLoaded', renderSidebarShortcuts);
 // 若页面已加载（如异步插入js），也尝试渲染
