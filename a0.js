@@ -76,6 +76,7 @@ window.templates = {
     </div>
 </body>
 </html>`,
+    
      SHA256哈希编码工具: `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
