@@ -1896,6 +1896,1303 @@ fetchData();
     </footer>
 </body>
 </html>`,  
+
+          探索数字世界的奥秘: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>探索数字世界的奥秘</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --text-color: #333;
+            --bg-color: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.2);
+            --border-color: rgba(255, 255, 255, 0.3);
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+        }
+
+        [data-theme="dark"] {
+            --text-color: #e2e8f0;
+            --bg-color: #0f172a;
+            --card-bg: rgba(15, 23, 42, 0.2);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background: url('https://img.tool.hidns.vip/file/1745658101612_illust_128708379_20250415_112946.jpg') center/cover fixed,
+                        linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* 粒子背景 */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.8; }
+        }
+
+        /* 鼠标跟随效果 - 彩色粉末 */
+        .cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: screen;
+            transition: all 0.1s ease;
+        }
+
+        .cursor-trail {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            border-radius: 50%;
+            mix-blend-mode: screen;
+        }
+
+        .powder-particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9997;
+            border-radius: 50%;
+            animation: powderFloat 2s ease-out forwards;
+        }
+
+        @keyframes powderFloat {
+            0% { opacity: 1; transform: scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: scale(0.3) rotate(360deg) translate(var(--random-x), var(--random-y)); }
+        }
+
+        /* 页眉 */
+        .header {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-100%); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .nav-container {
+            max-width: 2400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+
+        .nav-menu a:hover {
+            background: var(--card-bg);
+            transform: translateY(-2px);
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 2400px;
+            margin: 0 auto;
+            padding: 8rem 2rem 2rem;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 3rem;
+        }
+
+        /* TOC目录 */
+        .toc {
+            position: sticky;
+            top: 8rem;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            height: fit-content;
+            border: 1px solid var(--border-color);
+            animation: fadeInLeft 1s ease-out;
+        }
+
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .toc h3 {
+            color: white;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            margin-bottom: 0.5rem;
+        }
+
+        .toc a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            display: block;
+            padding: 0.3rem 0.5rem;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .toc a:hover, .toc a.active {
+            background: var(--card-bg);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        /* 文章内容 */
+        .article {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .article-title {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .article-meta {
+            text-align: center;
+            color: #666;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .article-content h2 {
+            color: #2c3e50;
+            margin: 2rem 0 1rem;
+            font-size: 1.8rem;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+        }
+
+        .article-content h3 {
+            color: #34495e;
+            margin: 1.5rem 0 0.8rem;
+            font-size: 1.4rem;
+        }
+
+        .article-content p {
+            margin-bottom: 1.2rem;
+            text-align: justify;
+            line-height: 1.8;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin: 1rem 0;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 音乐播放器 */
+        .music-player {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            animation: pulse 2s infinite;
+        }
+
+        .music-player:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .music-player.playing {
+            animation: spin 10s linear infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); }
+            50% { box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .music-icon {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            position: fixed;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 1000;
+        }
+
+        .tool-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .tool-btn:hover {
+            background: var(--card-bg);
+            transform: scale(1.1);
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            z-index: 9999;
+            transition: width 0.3s ease;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 6rem 1rem 2rem;
+            }
+
+            .toc {
+                position: relative;
+                top: auto;
+                order: 2;
+            }
+
+            .nav-menu {
+                display: none;
+            }
+
+            .toolbar {
+                display: none;
+            }
+
+            .article {
+                padding: 2rem;
+            }
+
+            .article-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <!-- 鼠标跟随效果 -->
+    <div class="cursor"></div>
+
+    <!-- 粒子背景 -->
+    <div class="particles"></div>
+
+    <!-- 进度条 -->
+    <div class="progress-bar"></div>
+
+    <!-- 页眉 -->
+    <header class="header">
+        <div class="nav-container">
+            <a href="#" class="logo">✨ 数字探索</a>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#intro">简介</a></li>
+                    <li><a href="#ai">人工智能</a></li>
+                    <li><a href="#blockchain">区块链</a></li>
+                    <li><a href="#iot">物联网</a></li>
+                    <li><a href="#future">未来展望</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+        <div class="tool-btn" id="themeToggle" title="夜间模式">🌙</div>
+        <div class="tool-btn" id="shareBtn" title="分享">📤</div>
+        <div class="tool-btn" id="fontIncrease" title="增大字体">A+</div>
+        <div class="tool-btn" id="fontDecrease" title="减小字体">A-</div>
+        <div class="tool-btn" id="scrollTop" title="返回顶部">↑</div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- TOC目录 -->
+        <aside class="toc">
+            <h3>📖 目录</h3>
+            <ul>
+                <li><a href="#intro" class="toc-link">引言</a></li>
+                <li><a href="#ai" class="toc-link">人工智能的崛起</a></li>
+                <li><a href="#blockchain" class="toc-link">区块链革命</a></li>
+                <li><a href="#iot" class="toc-link">万物互联时代</a></li>
+                <li><a href="#future" class="toc-link">未来展望</a></li>
+            </ul>
+        </aside>
+
+        <!-- 文章内容 -->
+        <main class="article">
+            <h1 class="article-title">探索数字世界的奥秘</h1>
+            <div class="article-meta">
+                <p>📅 发布时间: 2025年6月13日 | ✍️ 作者: 数字探索者 | 🏷️ 标签: 科技, 未来, 创新</p>
+            </div>
+
+            <div class="article-content">
+                <section id="intro">
+                    <h2>🌟 引言</h2>
+                    <p>在这个日新月异的数字时代，科技的发展速度令人叹为观止。从人工智能到区块链，从物联网到量子计算，每一项技术创新都在深刻地改变着我们的生活方式和工作模式。本文将带您深入探索这些前沿技术的奥秘，了解它们如何塑造我们的未来。</p>
+                    <p>数字化转型不仅仅是技术的升级，更是思维方式和商业模式的革命。在这场变革中，我们既是见证者，也是参与者。让我们一起踏上这场精彩的数字之旅。</p>
+                </section>
+
+                <section id="ai">
+                    <h2>🤖 人工智能的崛起</h2>
+                    <h3>机器学习的突破</h3>
+                    <p>人工智能技术正在以前所未有的速度发展。深度学习、自然语言处理、计算机视觉等领域的突破，使得AI能够在越来越多的场景中展现出超越人类的能力。从AlphaGo到ChatGPT，每一个里程碑都标志着人工智能技术的重大飞跃。</p>
+                    <h3>AI在日常生活中的应用</h3>
+                    <p>今天，AI已经悄然融入我们的日常生活。智能手机的语音助手、推荐系统、自动驾驶汽车、医疗诊断辅助等，这些应用正在改变我们与技术互动的方式。AI不再是科幻电影中的概念，而是我们生活中不可或缺的一部分。</p>
+                </section>
+
+                <section id="blockchain">
+                    <h2>⛓️ 区块链革命</h2>
+                    <h3>去中心化的力量</h3>
+                    <p>区块链技术以其去中心化、不可篡改的特性，正在重新定义信任的概念。从比特币到智能合约，从DeFi到NFT，区块链正在构建一个全新的数字经济生态系统。这项技术不仅仅是一种存储数据的方式，更是一种全新的价值交换机制。</p>
+                    <h3>区块链的实际应用</h3>
+                    <p>除了加密货币，区块链技术在供应链管理、数字身份验证、版权保护、投票系统等领域也展现出巨大的潜力。企业和政府正在积极探索如何利用区块链技术提高透明度、降低成本、增强安全性。</p>
+                </section>
+
+                <section id="iot">
+                    <h2>🌐 万物互联时代</h2>
+                    <h3>智能设备的普及</h3>
+                    <p>物联网（IoT）技术正在将我们的世界连接成一个巨大的智能网络。从智能家居到工业4.0，从智慧城市到精准农业，数以亿计的设备正在产生、传输和处理数据。这些数据不仅为我们提供了前所未有的洞察，也为人工智能的发展提供了丰富的"养料"。</p>
+                    <h3>5G与边缘计算</h3>
+                    <p>5G网络的部署和边缘计算技术的发展，为物联网应用提供了更低的延迟和更高的带宽。这使得实时数据处理和响应成为可能，为自动驾驶、远程医疗、工业自动化等应用开辟了新的可能性。</p>
+                </section>
+
+                <section id="future">
+                    <h2>🚀 未来展望</h2>
+                    <h3>技术融合的时代</h3>
+                    <p>未来的技术发展将不再是单一技术的突破，而是多种技术的深度融合。AI与区块链的结合可以创造更智能、更可信的系统；IoT与AI的融合可以实现真正的智能化；区块链与IoT的结合可以构建更安全的物联网生态。</p>
+                    <h3>面临的挑战与机遇</h3>
+                    <p>虽然这些技术为我们带来了巨大的机遇，但也面临着诸多挑战。隐私保护、数据安全、技术伦理、数字鸿沟等问题需要我们认真对待。只有在技术发展与社会责任之间找到平衡，我们才能真正实现技术为人类服务的目标。</p>
+                    <p>让我们怀着开放的心态拥抱这个数字化的未来，在享受技术便利的同时，也要承担起相应的责任。数字世界的奥秘等待着我们去探索，让我们一起创造一个更美好的明天。</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- 音乐播放器 -->
+    <div class="music-player" id="musicToggle">
+        <svg class="music-icon" viewBox="0 0 24 24">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
+    </div>
+
+    <!-- 音频元素 -->
+    <audio id="backgroundMusic" loop>
+        <source src="https://img.tool.hidns.vip/file/1748916396183_Give me Love_ (feat. nyankobrq)(MP3_320K).mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放。
+    </audio>
+
+    <script>
+        // 粒子系统
+        function createParticles() {
+            var particlesContainer = document.querySelector('.particles');
+            var particleCount = 50;
+
+            for (var i = 0; i < particleCount; i++) {
+                var particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // 鼠标跟随效果 - 彩色粉末
+        var mouseX = 0, mouseY = 0;
+        var cursorX = 0, cursorY = 0;
+        var cursor = document.querySelector('.cursor');
+        var colors = [
+            '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7',
+            '#dda0dd', '#98d8c8', '#f7dc6f', '#bb8fce', '#85c1e9'
+        ];
+
+        document.addEventListener('mousemove', function(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.1;
+            cursorY += (mouseY - cursorY) * 0.1;
+            
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+
+            if (Math.random() < 0.4) {
+                createColorfulPowder(cursorX, cursorY);
+            }
+
+            requestAnimationFrame(animateCursor);
+        }
+
+        function createColorfulPowder(x, y) {
+            var powder = document.createElement('div');
+            powder.className = 'powder-particle';
+            
+            var size = Math.random() * 8 + 4;
+            var color = colors[Math.floor(Math.random() * colors.length)];
+            var randomX = (Math.random() - 0.5) * 100 + 'px';
+            var randomY = (Math.random() - 0.5) * 100 + 'px';
+            
+            powder.style.width = size + 'px';
+            powder.style.height = size + 'px';
+            powder.style.left = x + 'px';
+            powder.style.top = y + 'px';
+            powder.style.background = 'radial-gradient(circle, ' + color + ', ' + color + '80)';
+            powder.style.setProperty('--random-x', randomX);
+            powder.style.setProperty('--random-y', randomY);
+            
+            document.body.appendChild(powder);
+
+            setTimeout(function() { powder.remove(); }, 2000);
+        }
+
+        function createTrail(x, y) {
+            var trail = document.createElement('div');
+            trail.className = 'cursor-trail';
+            var size = Math.random() * 12 + 6;
+            var color = colors[Math.floor(Math.random() * colors.length)];
+            
+            trail.style.width = size + 'px';
+            trail.style.height = size + 'px';
+            trail.style.left = x + 'px';
+            trail.style.top = y + 'px';
+            trail.style.background = 'radial-gradient(circle, ' + color + ', transparent)';
+            
+            document.body.appendChild(trail);
+
+            setTimeout(function() {
+                trail.style.opacity = '0';
+                trail.style.transform = 'scale(0)';
+                trail.style.transition = 'all 0.5s ease-out';
+                setTimeout(function() { trail.remove(); }, 500);
+            }, 100);
+        }
+
+        // 滚动进度条
+        function updateProgressBar() {
+            var scrollTop = window.pageYOffset;
+            var docHeight = document.body.scrollHeight - window.innerHeight;
+            var scrollPercent = (scrollTop / docHeight) * 100;
+            document.querySelector('.progress-bar').style.width = scrollPercent + '%';
+        }
+
+        // TOC活跃状态
+        function updateTOC() {
+            var sections = document.querySelectorAll('section[id]');
+            var tocLinks = document.querySelectorAll('.toc-link');
+            
+            var current = '';
+            sections.forEach(function(section) {
+                var sectionTop = section.offsetTop - 100;
+                if (window.pageYOffset >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            tocLinks.forEach(function(link) {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // 音乐播放控制
+        var isPlaying = false;
+        var audio = document.getElementById('backgroundMusic');
+        var musicPlayer = document.querySelector('.music-player');
+
+        function toggleMusic() {
+            if (isPlaying) {
+                audio.pause();
+                musicPlayer.classList.remove('playing');
+                isPlaying = false;
+            } else {
+                audio.play().catch(function(error) {
+                    console.log('音频播放失败:', error);
+                });
+                musicPlayer.classList.add('playing');
+                isPlaying = true;
+            }
+        }
+
+        // 工具函数
+        function toggleNightMode() {
+            var body = document.body;
+            var isDark = body.getAttribute('data-theme') === 'dark';
+            body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            document.getElementById('themeToggle').textContent = isDark ? '🌙' : '☀️';
+        }
+
+        function increaseFontSize() {
+            var article = document.querySelector('.article-content');
+            var currentSize = window.getComputedStyle(article).fontSize;
+            var newSize = Math.min(parseFloat(currentSize) * 1.1, 24);
+            article.style.fontSize = newSize + 'px';
+        }
+
+        function decreaseFontSize() {
+            var article = document.querySelector('.article-content');
+            var currentSize = window.getComputedStyle(article).fontSize;
+            var newSize = Math.max(parseFloat(currentSize) * 0.9, 12);
+            article.style.fontSize = newSize + 'px';
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function shareArticle() {
+            if (navigator.share) {
+                navigator.share({
+                    title: document.querySelector('.article-title').textContent,
+                    text: '探索数字世界的奥秘，了解人工智能、区块链和物联网的未来！',
+                    url: window.location.href
+                }).catch(function(error) {
+                    console.log('分享失败:', error);
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href).then(function() {
+                    var shareBtn = document.getElementById('shareBtn');
+                    shareBtn.textContent = '✅';
+                    setTimeout(function() { shareBtn.textContent = '📤'; }, 2000);
+                }).catch(function(error) {
+                    console.log('复制失败:', error);
+                });
+            }
+        }
+
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                var target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // 事件监听
+        window.addEventListener('scroll', function() {
+            updateProgressBar();
+            updateTOC();
+        });
+
+        // 初始化
+        window.addEventListener('load', function() {
+            createParticles();
+            animateCursor();
+            updateProgressBar();
+            updateTOC();
+
+            document.getElementById('themeToggle').addEventListener('click', toggleNightMode);
+            document.getElementById('shareBtn').addEventListener('click', shareArticle);
+            document.getElementById('fontIncrease').addEventListener('click', increaseFontSize);
+            document.getElementById('fontDecrease').addEventListener('click', decreaseFontSize);
+            document.getElementById('scrollTop').addEventListener('click', scrollToTop);
+            document.getElementById('musicToggle').addEventListener('click', toggleMusic);
+        });
+
+        // 元素悬停效果
+        document.querySelectorAll('.tool-btn, .nav-menu a, .toc a').forEach(function(el) {
+            el.addEventListener('mouseenter', function() {
+                cursor.style.transform = 'scale(1.5)';
+                cursor.style.background = 'rgba(255, 255, 255, 0.3)';
+            });
+            el.addEventListener('mouseleave', function() {
+                cursor.style.transform = 'scale(1)';
+                cursor.style.background = 'transparent';
+            });
+        });
+    </script>
+</body>
+</html>`,
+    
+           美化博客模板: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>现代化博客 - 文章标题</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --text-color: #333;
+            --bg-color: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.75);
+            --border-color: rgba(255, 255, 255, 0.3);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        [data-theme="dark"] {
+            --text-color: #e2e8f0;
+            --bg-color: #0f172a;
+            --card-bg: rgba(15, 23, 42, 0.75);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        /* 页眉 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 30px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 30px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            letter-spacing: -0.5px;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .nav-link:hover {
+            background: rgba(102, 126, 234, 0.1);
+            opacity: 1;
+            transform: translateY(-1px);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            color: var(--text-color);
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .article {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+        }
+
+        .article h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .article-meta {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 14px;
+        }
+
+        .article h2 {
+            font-size: 24px;
+            margin: 30px 0 15px 0;
+            color: var(--primary-color);
+        }
+
+        .article h3 {
+            font-size: 20px;
+            margin: 25px 0 10px 0;
+            color: var(--secondary-color);
+        }
+
+        .article p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        /* TOC 目录 */
+        .toc {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .toc h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-size: 18px;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            margin-bottom: 8px;
+        }
+
+        .toc a {
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: block;
+            position: relative;
+        }
+
+        .toc a:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateX(5px);
+        }
+
+        .toc a.active {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        /* 页脚 */
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            border-top: 1px solid var(--border-color);
+            margin-top: 30px;
+            opacity: 0.7;
+        }
+
+        /* 音乐控制器 */
+        .music-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            z-index: 1000;
+        }
+
+        .music-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .music-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            animation: fadeInUp 0.8s ease;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+                border-radius: 15px;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .toc {
+                position: static;
+                order: -1;
+            }
+
+            .article {
+                padding: 20px;
+            }
+
+            .article h1 {
+                font-size: 24px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+                text-align: center;
+            }
+
+            .header-nav {
+                order: 2;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+
+            .controls {
+                order: 3;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .control-btn {
+                font-size: 12px;
+                padding: 8px 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 页眉 -->
+        <header>
+            <div class="logo">🌟 现代化博客</div>
+            <nav class="header-nav">
+                <a href="#" class="nav-link">首页</a>
+                <a href="#" class="nav-link">文章</a>
+                <a href="#" class="nav-link">分类</a>
+                <a href="#" class="nav-link">关于</a>
+            </nav>
+            <div class="controls">
+                <button class="control-btn" id="themeToggle">🌙 夜间模式</button>
+                <button class="control-btn" id="fontSizeToggle">🔍 字体大小</button>
+                <button class="control-btn" id="shareBtn">📤 分享</button>
+            </div>
+        </header>
+
+        <!-- 主内容 -->
+        <div class="main-content">
+            <!-- 文章内容 -->
+            <article class="article">
+                <h1>现代化Web设计指南</h1>
+                <div class="article-meta">
+                    <span>📅 2025年6月18日</span>
+                    <span>👤 作者：设计师</span>
+                    <span>🏷️ 标签：Web设计, UI/UX</span>
+                    <span>⏱️ 阅读时间：5分钟</span>
+                </div>
+
+                <p>在当今数字化时代，现代化的Web设计不仅仅是美观的表现，更是用户体验的核心。本文将为您详细介绍如何创建一个既美观又实用的现代化网站。</p>
+
+                <h2 id="design-principles">设计原则</h2>
+                <p>现代化Web设计遵循几个核心原则：简洁性、一致性、可访问性和响应式设计。这些原则确保您的网站能够为所有用户提供优质的体验。</p>
+
+                <h3 id="simplicity">简洁性</h3>
+                <p>简洁的设计能够让用户快速找到所需信息，避免视觉干扰。使用充足的空白空间，精心选择的字体，以及有意义的颜色搭配。</p>
+
+                <h3 id="consistency">一致性</h3>
+                <p>保持设计元素的一致性，包括颜色、字体、间距和交互方式。这有助于建立用户的信任感和使用习惯。</p>
+
+                <h2 id="visual-elements">视觉元素</h2>
+                <p>现代化设计广泛使用毛玻璃效果、渐变背景、圆角边框和微妙的阴影。这些元素共同创造出深度感和现代感。</p>
+
+                <h3 id="glass-effect">毛玻璃效果</h3>
+                <p>毛玻璃效果通过backdrop-filter属性实现，为界面增添层次感和现代感。它特别适合用于卡片、导航栏和模态框。</p>
+
+                <h3 id="gradients">渐变背景</h3>
+                <p>渐变背景能够创造视觉吸引力，但应该谨慎使用，确保不会影响文本的可读性。</p>
+
+                <h2 id="responsive-design">响应式设计</h2>
+                <p>响应式设计确保您的网站在各种设备上都能完美显示。使用弹性网格系统、灵活的图片和媒体查询来实现这一目标。</p>
+
+                <h3 id="mobile-first">移动优先</h3>
+                <p>从移动设备开始设计，然后逐步增强到桌面版本。这种方法确保核心功能在所有设备上都能正常工作。</p>
+
+                <h2 id="accessibility">可访问性</h2>
+                <p>确保您的网站对所有用户都是可访问的，包括使用辅助技术的用户。这包括适当的颜色对比度、键盘导航支持和语义化的HTML结构。</p>
+
+                <p>总结来说，现代化Web设计是技术与美学的完美结合。通过遵循这些原则和最佳实践，您可以创建出既美观又实用的网站。</p>
+            </article>
+
+            <!-- TOC 目录 -->
+            <aside class="toc">
+                <h3>📋 文章目录</h3>
+                <ul>
+                    <li><a href="#design-principles">设计原则</a>
+                        <ul>
+                            <li><a href="#simplicity">简洁性</a></li>
+                            <li><a href="#consistency">一致性</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#visual-elements">视觉元素</a>
+                        <ul>
+                            <li><a href="#glass-effect">毛玻璃效果</a></li>
+                            <li><a href="#gradients">渐变背景</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#responsive-design">响应式设计</a>
+                        <ul>
+                            <li><a href="#mobile-first">移动优先</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#accessibility">可访问性</a></li>
+                </ul>
+            </aside>
+        </div>
+
+        <!-- 页脚 -->
+        <footer>
+            <p>© 2025 现代化博客. 用心设计，用爱分享。</p>
+        </footer>
+    </div>
+
+    <!-- 音乐控制器 -->
+    <div class="music-controls">
+        <button class="music-btn" id="musicToggle">🎵</button>
+    </div>
+
+    <!-- 背景音乐 -->
+    <audio id="bgMusic" loop>
+        <source src="https://www.soundjay.com/misc/sounds/magic-chime-02.wav" type="audio/wav">
+        您的浏览器不支持音频播放。
+    </audio>
+
+    <script>
+        // 主题切换
+        var themeToggle = document.getElementById('themeToggle');
+        var body = document.body;
+        var isDarkTheme = false;
+
+        themeToggle.addEventListener('click', function() {
+            isDarkTheme = !isDarkTheme;
+            body.setAttribute('data-theme', isDarkTheme ? 'dark' : 'light');
+            themeToggle.textContent = isDarkTheme ? '☀️ 日间模式' : '🌙 夜间模式';
+        });
+
+        // 字体大小切换
+        var fontSizeToggle = document.getElementById('fontSizeToggle');
+        var fontSize = 16;
+
+        fontSizeToggle.addEventListener('click', function() {
+            fontSize = fontSize === 16 ? 18 : fontSize === 18 ? 20 : 16;
+            document.documentElement.style.fontSize = fontSize + 'px';
+            fontSizeToggle.textContent = '🔍 字体 ' + fontSize + 'px';
+        });
+
+        // 背景音乐控制
+        var musicToggle = document.getElementById('musicToggle');
+        var bgMusic = document.getElementById('bgMusic');
+        var isMusicPlaying = false;
+
+        musicToggle.addEventListener('click', function() {
+            if (isMusicPlaying) {
+                bgMusic.pause();
+                musicToggle.textContent = '🎵';
+            } else {
+                bgMusic.play().catch(function(error) {
+                    console.log('音频播放失败:', error);
+                });
+                musicToggle.textContent = '🔇';
+            }
+            isMusicPlaying = !isMusicPlaying;
+        });
+
+        // TOC 目录高亮
+        var tocLinks = document.querySelectorAll('.toc a');
+        var sections = document.querySelectorAll('h2[id], h3[id]');
+
+        function highlightTOC() {
+            var currentId = '';
+            sections.forEach(function(section) {
+                var sectionTop = section.offsetTop;
+                if (window.scrollY >= sectionTop - 100) {
+                    currentId = section.getAttribute('id');
+                }
+            });
+
+            tocLinks.forEach(function(link) {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + currentId) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', highlightTOC);
+
+        // 平滑滚动
+        tocLinks.forEach(function(link) {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                var targetId = link.getAttribute('href').substring(1);
+                var targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 初始化 TOC 高亮
+        highlightTOC();
+
+        // 分享功能
+        var shareBtn = document.getElementById('shareBtn');
+        shareBtn.addEventListener('click', function() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '现代化Web设计指南',
+                    text: '查看这篇关于现代化Web设计的精彩文章！',
+                    url: window.location.href
+                }).catch(function(error) {
+                    console.log('分享失败:', error);
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href).then(function() {
+                    shareBtn.textContent = '✅ 已复制链接';
+                    setTimeout(function() {
+                        shareBtn.textContent = '📤 分享';
+                    }, 2000);
+                }).catch(function(error) {
+                    console.log('复制失败:', error);
+                });
+            }
+        });
+    </script>
+</body>
+</html>`,
     
            博客文章模板: `<!DOCTYPE html>
 <html lang="zh-CN">
