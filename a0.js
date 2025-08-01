@@ -76,6 +76,72 @@ window.templates = {
     </div>
 </body>
 </html>`,
+  带复制按钮的代码块: `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>带复制按钮的代码块</title>
+    <style>
+        .code-block-container {
+            position: relative;
+            display: inline-block;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 2px 8px;
+            background: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .copy-btn:hover {
+            opacity: 1;
+        }
+        pre {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="code-block-container">
+    <button class="copy-btn">复制</button>
+    <pre><code>async function fetchData() {
+    try {
+        const response = await fetch('https://api.example.com/data');
+        const data = await response.json();
+        console.log(data);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+fetchData();</code></pre>
+</div>
+
+<script>
+document.querySelectorAll('.code-block-container').forEach(container => {
+    const btn = container.querySelector('.copy-btn');
+    const code = container.querySelector('code');
+
+    btn.addEventListener('click', () => {
+        // 获取 code 标签内容并复制
+        const codeText = code.innerText;
+        navigator.clipboard.writeText(codeText).then(() => {
+            btn.textContent = '已复制!';
+            setTimeout(() => btn.textContent = '复制', 1500);
+        });
+    });
+});
+</script>
+
+</body>
+</html>`,
   活力代码世界黑暗博客: `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
